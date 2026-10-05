@@ -1,0 +1,35 @@
+[
+  {
+    "perfil_id": "PERFIL_DIAG-MAT-04-JOSE-2024",
+    "test_id": "DIAG-MAT-04-JOSE-2024",
+    "alumno": { "nombre": "Jose", "anio_ingreso": 2024 },
+    "temas": [
+      { "contenido_id": "4_FA_001", "anio": 4, "eje": "En relación con las Funciones y el Álgebra", "tema": "Funciones lineales y cuadráticas", "dominio_pct": 62.1 },
+      { "contenido_id": "4_FA_002", "anio": 4, "eje": "En relación con las Funciones y el Álgebra", "tema": "Sistemas de ecuaciones lineales", "dominio_pct": 58.3 },
+      { "contenido_id": "4_FA_003", "anio": 4, "eje": "En relación con las Funciones y el Álgebra", "tema": "Ecuaciones e inecuaciones lineales", "dominio_pct": 58.3 },
+      { "contenido_id": "4_FA_005", "anio": 4, "eje": "En relación con las Funciones y el Álgebra", "tema": "Ecuaciones cuadráticas", "dominio_pct": 58.3 },
+      { "contenido_id": "4_GM_001", "anio": 4, "eje": "En relación con la Geometría y la Medida", "tema": "Semejanza de triángulos", "dominio_pct": 66.7 },
+      { "contenido_id": "4_GM_002", "anio": 4, "eje": "En relación con la Geometría y la Medida", "tema": "Teorema de Thales", "dominio_pct": 66.7 },
+      { "contenido_id": "4_GM_003", "anio": 4, "eje": "En relación con la Geometría y la Medida", "tema": "Perímetros y áreas de figuras semejantes", "dominio_pct": 75 },
+      { "contenido_id": "4_GM_004", "anio": 4, "eje": "En relación con la Geometría y la Medida", "tema": "Razones trigonométricas en triángulos rectángulos", "dominio_pct": 50 },
+      { "contenido_id": "4_NA_001", "anio": 4, "eje": "En relación con el Número y el Álgebra", "tema": "Conteo y relaciones multiplicativas", "dominio_pct": 72.5 },
+      { "contenido_id": "4_NA_002", "anio": 4, "eje": "En relación con el Número y el Álgebra", "tema": "Números racionales", "dominio_pct": 72.5 },
+      { "contenido_id": "4_NA_003", "anio": 4, "eje": "En relación con el Número y el Álgebra", "tema": "Razón, proporción y proporcionalidad directa", "dominio_pct": 69 },
+      { "contenido_id": "4_PE_001", "anio": 4, "eje": "En relación con las Probabilidades y la Estadística", "tema": "Variables, muestra y representación de datos", "dominio_pct": 54.2 },
+      { "contenido_id": "4_PE_002", "anio": 4, "eje": "En relación con las Probabilidades y la Estadística", "tema": "Medidas de posición", "dominio_pct": 72.5 },
+      { "contenido_id": "4_PE_003", "anio": 4, "eje": "En relación con las Probabilidades y la Estadística", "tema": "Probabilidad de sucesos", "dominio_pct": 60 }
+    ],
+    "practica_diaria": {
+      "cantidad_recomendada": 5,
+      "cola_inicial": [
+        {
+          "contenido_id": "4_GM_004",
+          "tema": "Razones trigonométricas en triángulos rectángulos",
+          "habilidad_id": "4_GM_004_H03",
+          "habilidad": "Calcular e interpretar la tangente en las situaciones correspondientes.",
+          "dominio_pct": 50
+        }
+      ]
+    }
+  }
+]

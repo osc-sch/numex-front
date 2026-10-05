@@ -1,0 +1,61 @@
+{
+  "test_id": "DIAG_MAT_4TO_JOSE_001",
+  "tipo": "diagnostico_inicial",
+  "area": "Matemática",
+  "alumno": {
+    "nombre": "Jose",
+    "anio_ingreso": 4
+  },
+  "anios_evaluados": [
+    1,
+    2,
+    3
+  ],
+  "total_preguntas": 36,
+  "formato_respuesta": "Seleccionar una opción: A, B, C o D",
+  "preguntas": [
+    {
+      "pregunta_id": "P036",
+      "anio_origen": 3,
+      "eje": "En relación con la Probabilidad y la Estadística",
+      "contenido_id": "3_PE_006",
+      "habilidad_id": "3_PE_006_H02",
+      "enunciado": "En 20 ensayos, un suceso ocurrió 8 veces. ¿Cuál es su frecuencia relativa?",
+      "opciones": {
+        "A": {
+          "texto": "0,8",
+          "Correct": false,
+          "feedback": "No es correcto. La frecuencia relativa es 8/20 = 0,4. Por eso, «0,8» no es la respuesta correcta."
+        },
+        "B": {
+          "texto": "2,5",
+          "Correct": false,
+          "feedback": "No es correcto. La frecuencia relativa es 8/20 = 0,4. Por eso, «2,5» no es la respuesta correcta."
+        },
+        "C": {
+          "texto": "0,4",
+          "Correct": true,
+          "feedback": "¡Muy bien! La frecuencia relativa es 8/20 = 0,4."
+        },
+        "D": {
+          "texto": "0,2",
+          "Correct": false,
+          "feedback": "No es correcto. La frecuencia relativa es 8/20 = 0,4. Por eso, «0,2» no es la respuesta correcta."
+        }
+      }
+    }
+  ],
+  "distribucion": {
+    "por_anio": {
+      "1": 10,
+      "2": 12,
+      "3": 14
+    },
+    "por_eje": {
+      "En relación con el Número y las Operaciones": 9,
+      "En relación con el Álgebra y las Funciones": 9,
+      "En relación con la Geometría y la Medida": 10,
+      "En relación con la Probabilidad y la Estadística": 8
+    }
+  }
+}
