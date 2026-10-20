@@ -9,7 +9,7 @@ import { submitTestCorrection } from '../src/services/testCorrection.js'
 
 const session = parseActivitySession({
   test_id: 'TEST_MAT_001',
-  alumno: { nombre: 'Juan Pérez', anio_ingreso: 2024 },
+  alumno: { nombre: 'Juan Pérez', anio_cursada: 3, anio_ingreso: 2024 },
   preguntas: [
     {
       pregunta_id: 'P001',
@@ -29,7 +29,7 @@ const session = parseActivitySession({
 })
 const answers = { P002: 'C', P001: 'B' }
 const expectedPayload = {
-  alumno: { nombre: 'Juan Pérez', anio_ingreso: 2024 },
+  alumno: { nombre: 'Juan Pérez', anio_cursada: 3 },
   cantidad_practica_diaria: 5,
   test: {
     test_id: 'TEST_MAT_001',
@@ -60,7 +60,7 @@ test('derives the answer key from Correct for the previously supported internal 
   ))
   const payload = buildTestCorrectionPayload(example, { P036: 'D' })
 
-  assert.deepEqual(payload.alumno, { nombre: 'Jose', anio_ingreso: 4 })
+  assert.deepEqual(payload.alumno, { nombre: 'Jose', anio_cursada: 4 })
   assert.equal(payload.test.test_id, example.test_id)
   assert.equal(payload.test.preguntas[0].respuesta_correcta, 'C')
   assert.equal(payload.respuestas[0].respuesta, 'D')
@@ -148,4 +148,31 @@ test('keeps a successful submission when the response contains no usable profile
   const fetchMock = context.mock.method(globalThis, 'fetch', async () => new Response('Workflow started'))
   assert.equal(await submitTestCorrection(session, answers), null)
   assert.equal(fetchMock.mock.callCount(), 1)
+})
+
+test('accepts the first and last curricular years without sending anio_ingreso', () => {
+  for (const schoolYear of [1, 6]) {
+    const payload = buildTestCorrectionPayload({
+      ...session,
+      alumno: { ...session.alumno, anio_cursada: schoolYear },
+    }, answers)
+    assert.deepEqual(payload.alumno, { nombre: 'Juan Pérez', anio_cursada: schoolYear })
+  }
+})
+
+test('rejects missing, invalid and calendar years before contacting the corrector', async (context) => {
+  const fetchMock = context.mock.method(globalThis, 'fetch', () => {
+    throw new Error('Unexpected network request')
+  })
+  for (const schoolYear of [undefined, null, 0, 7, 2023, 2.5, '3']) {
+    await assert.rejects(submitTestCorrection({
+      ...session,
+      alumno: { nombre: 'Juan Pérez', anio_cursada: schoolYear },
+    }, answers), /año de cursada.*1 al 6/)
+  }
+  await assert.rejects(submitTestCorrection({
+    ...session,
+    alumno: { nombre: 'Juan Pérez', anio_ingreso: 2023 },
+  }, answers), /año de cursada.*1 al 6/)
+  assert.equal(fetchMock.mock.callCount(), 0)
 })

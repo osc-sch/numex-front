@@ -4,13 +4,16 @@ const isPositiveInteger = (value) => Number.isInteger(value) && value > 0
 
 export function parseCorrectionProfile(payload, expectedTestId) {
   const profile = Array.isArray(payload) && payload.length === 1 ? payload[0] : payload
+  const schoolYear = profile?.alumno?.anio_cursada
 
   if (
     !hasText(profile?.perfil_id) ||
     !hasText(profile?.test_id) ||
     (expectedTestId != null && profile.test_id !== expectedTestId) ||
     !hasText(profile?.alumno?.nombre) ||
-    !isPositiveInteger(profile?.alumno?.anio_ingreso) ||
+    (schoolYear == null
+      ? !isPositiveInteger(profile?.alumno?.anio_ingreso)
+      : !isPositiveInteger(schoolYear) || schoolYear > 6) ||
     !Array.isArray(profile?.temas) ||
     !profile.temas.every((topic) =>
       hasText(topic?.contenido_id) &&

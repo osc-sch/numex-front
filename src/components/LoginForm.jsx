@@ -41,7 +41,7 @@ function LoginForm() {
   return (
     <Form className="auth-form" onSubmit={handleSubmit} aria-busy={isSubmitting}>
       {state?.registrationSuccess && (
-        <Alert variant="success" role="status">Tu cuenta de alumno se creó correctamente.</Alert>
+        <Alert variant="success" role="status">Tu cuenta se creó correctamente.</Alert>
       )}
       <div className="form-header">
         <span className="brand-mark">NUMEX</span>

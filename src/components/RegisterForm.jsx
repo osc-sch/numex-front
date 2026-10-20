@@ -14,6 +14,7 @@ function RegisterForm({ onStepChange }) {
   const [photoUrl, setPhotoUrl] = useState('')
   const [showPhotoModal, setShowPhotoModal] = useState(false)
   const [currentStep, setCurrentStep] = useState(1)
+  const [accountType, setAccountType] = useState('alumno')
   const [institutionType, setInstitutionType] = useState('')
   const [schoolYear, setSchoolYear] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -37,13 +38,17 @@ function RegisterForm({ onStepChange }) {
 
   const validateStep = (step) => {
     const fields = formRef.current.elements
-    const names = step === 1 ? accountFields : personalFields
+    const names = step === 1 ? accountFields
+      : [...personalFields, ...(accountType === 'docente' ? ['codigo_verificacion'] : [])]
 
     for (const name of names) fields.namedItem(name).setCustomValidity('')
     for (const name of step === 1 ? ['user_name'] : ['nombre', 'apellido']) {
       if (!fields.namedItem(name).value.trim()) {
         fields.namedItem(name).setCustomValidity('Completá este campo.')
       }
+    }
+    if (step === 2 && accountType === 'docente' && !fields.namedItem('codigo_verificacion').value.trim()) {
+      fields.namedItem('codigo_verificacion').setCustomValidity('Ingresá el código de verificación.')
     }
     if (step === 1) {
       const password = fields.namedItem('password')
@@ -87,6 +92,8 @@ function RegisterForm({ onStepChange }) {
 
     const values = new FormData(formRef.current)
     const registrationData = {
+      tipo_cuenta: accountType,
+      ...(accountType === 'docente' ? { codigo_verificacion: values.get('codigo_verificacion').trim() } : {}),
       user_name: values.get('user_name').trim(),
       email: values.get('email').trim().toLowerCase(),
       password: values.get('password'),
@@ -180,12 +187,26 @@ function RegisterForm({ onStepChange }) {
                 <h3>Datos personales</h3>
                 <p>Contanos un poco más sobre vos para personalizar tu experiencia.</p>
               </div>
-              <div className="profile-tabs" aria-label="Tipo de cuenta">
-                <span className="profile-tab active"><i className="bi bi-backpack-fill" aria-hidden="true" /> Alumno</span>
-                <button type="button" className="profile-tab" disabled>
-                  <i className="bi bi-person-workspace" aria-hidden="true" /> Docente (próximamente)
+              <div className="profile-tabs" role="group" aria-label="Tipo de cuenta">
+                <button type="button" className={`profile-tab${accountType === 'alumno' ? ' active' : ''}`}
+                  aria-pressed={accountType === 'alumno'} onClick={() => { setAccountType('alumno'); setError('') }}>
+                  <i className="bi bi-backpack-fill" aria-hidden="true" /> Alumno
+                </button>
+                <button type="button" className={`profile-tab${accountType === 'docente' ? ' active' : ''}`}
+                  aria-pressed={accountType === 'docente'} onClick={() => { setAccountType('docente'); setError('') }}>
+                  <i className="bi bi-person-workspace" aria-hidden="true" /> Docente
                 </button>
               </div>
+              {accountType === 'docente' && (
+                <Form.Group className="mb-3" controlId="formVerificationCode">
+                  <Form.Label>Código de verificación</Form.Label>
+                  <Form.Control name="codigo_verificacion" type="password" autoComplete="off" maxLength={128}
+                    placeholder="Ingresá tu código de verificación" aria-describedby="verificationHelp" required />
+                  <Form.Text id="verificationHelp" className="verification-help">
+                    Necesitás una clave de verificación para crear una cuenta de docente.
+                  </Form.Text>
+                </Form.Group>
+              )}
               <div className="row g-3">
                 <div className="col-md-6">
                   <Form.Group controlId="formName">
@@ -218,10 +239,10 @@ function RegisterForm({ onStepChange }) {
                 </Form.Select>
               </Form.Group>
               <Form.Group className="mb-3" controlId="formSchoolYear">
-                <Form.Label>Año escolar</Form.Label>
+                <Form.Label>{accountType === 'docente' ? 'Año en el que enseñás' : 'Año escolar'}</Form.Label>
                 <Form.Select name="anio_cursada" value={schoolYear} disabled={!institutionType}
                   onChange={(event) => setSchoolYear(event.target.value)} required>
-                  <option value="" disabled>Elegí tu año</option>
+                  <option value="" disabled>{accountType === 'docente' ? 'Elegí el año en el que enseñás' : 'Elegí tu año'}</option>
                   {[1, 2, 3, 4, 5, 6, ...(institutionType === 'tecnica' ? [7] : [])].map((year) => (
                     <option key={year} value={year}>{year}° año</option>
                   ))}

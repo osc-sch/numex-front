@@ -11,6 +11,10 @@ export default defineConfig(({ mode }) => ({
         target: loadEnv(mode, process.cwd(), '').BACKEND_URL || 'http://127.0.0.1:3000',
         changeOrigin: true,
       },
+      '/api/courses': {
+        target: loadEnv(mode, process.cwd(), '').BACKEND_URL || 'http://127.0.0.1:3000',
+        changeOrigin: true,
+      },
       '^/api/diagnostic$': {
         target: 'https://osc-sch.app.n8n.cloud',
         changeOrigin: true,

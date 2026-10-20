@@ -73,15 +73,20 @@ export function parseActivitySession(payload) {
 }
 
 export function buildTestCorrectionPayload(session, answers) {
+  // Older sessions used anio_ingreso for the curricular year.
+  const schoolYear = session?.alumno?.anio_cursada ?? session?.alumno?.anio_ingreso
+
   if (
     !hasText(session?.alumno?.nombre) ||
-    !Number.isInteger(session?.alumno?.anio_ingreso) ||
-    session.alumno.anio_ingreso <= 0 ||
     !hasText(session?.test_id) ||
     !Array.isArray(session?.preguntas) ||
     session.preguntas.length === 0
   ) {
     throw new Error('No se pudo preparar el envío: faltan datos del alumno o del test.')
+  }
+
+  if (!Number.isInteger(schoolYear) || schoolYear < 1 || schoolYear > 6) {
+    throw new Error('El año de cursada debe ser un número entero del 1 al 6, no el año calendario de ingreso. Revisá los datos de tu perfil.')
   }
 
   const questions = session.preguntas.map((question) => {
@@ -116,7 +121,7 @@ export function buildTestCorrectionPayload(session, answers) {
   return {
     alumno: {
       nombre: session.alumno.nombre,
-      anio_ingreso: session.alumno.anio_ingreso,
+      anio_cursada: schoolYear,
     },
     cantidad_practica_diaria: 5,
     test: {

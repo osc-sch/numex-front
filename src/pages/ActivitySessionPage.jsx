@@ -10,6 +10,7 @@ import {
 } from 'react-bootstrap'
 import { useNavigate } from 'react-router-dom'
 
+import { useAuth } from '../auth/authContext'
 import DashboardLayout from '../components/DashboardLayout'
 import { submitTestCorrection } from '../services/testCorrection'
 import '../styles/activity-session.css'
@@ -54,6 +55,7 @@ function ActivitySessionPage({
   onComplete,
 }) {
   const navigate = useNavigate()
+  const { profile } = useAuth()
   const config =
     SESSION_CONFIG[purpose] ??
     SESSION_CONFIG.practice
@@ -180,9 +182,16 @@ function ActivitySessionPage({
     setIsSubmitting(true)
     setSubmitError('')
     let correctionProfile
+    const correctionSession = {
+      ...sessionData,
+      alumno: {
+        ...sessionData?.alumno,
+        anio_cursada: profile?.anio_cursada ?? sessionData?.alumno?.anio_cursada,
+      },
+    }
 
     try {
-      correctionProfile = await submitTestCorrection(sessionData, answers)
+      correctionProfile = await submitTestCorrection(correctionSession, answers)
       setShowFinishModal(false)
       setCompleted(true)
     } catch (error) {
@@ -207,7 +216,7 @@ function ActivitySessionPage({
       purpose,
 
       answers,
-      sessionData,
+      sessionData: correctionSession,
       completed_at: new Date().toISOString(),
       correctionProfile,
 

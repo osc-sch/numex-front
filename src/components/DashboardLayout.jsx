@@ -2,11 +2,20 @@ import { useRef, useState } from 'react'
 import { Alert, Button, Offcanvas, Spinner } from 'react-bootstrap'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../auth/authContext'
+import { teacherSections } from '../data/teacherWorkspace'
+import '../styles/teacher.css'
 
-const navItems = [
+const studentNavItems = [
   { label: 'Inicio', icon: 'bi-house-door-fill', path: '/' },
+  { label: 'Mis cursos', icon: 'bi-collection-fill', path: '/courses' },
   { label: 'Desafíos', icon: 'bi-lightning-charge-fill', path: '/challenges' },
   { label: 'Mi progreso', icon: 'bi-bar-chart-fill', path: '/progress' },
+  { label: 'Biblioteca', icon: 'bi-journal-text', path: '/library' },
+]
+
+const teacherNavItems = [
+  { label: 'Inicio', icon: 'bi-house-door-fill', path: '/' },
+  ...teacherSections,
   { label: 'Biblioteca', icon: 'bi-journal-text', path: '/library' },
 ]
 
@@ -14,7 +23,10 @@ const SIDEBAR_PREFERENCE_KEY = 'numex_sidebar_collapsed'
 
 function DashboardLayout({ children, eyebrow }) {
   const { user, profile, logout } = useAuth()
-  const displayName = profile?.nombre || user?.user_name || 'Estudiante'
+  const isTeacher = user?.id_rol === 2
+  const navItems = isTeacher ? teacherNavItems : studentNavItems
+  const workspaceLabel = isTeacher ? 'Mi enseñanza' : 'Mi aprendizaje'
+  const displayName = profile?.nombre || user?.user_name || (isTeacher ? 'Docente' : 'Estudiante')
   const loggingOut = useRef(false)
   const [isSidebarOpen, setIsSidebarOpen] = useState(false)
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(() => {
@@ -70,14 +82,14 @@ function DashboardLayout({ children, eyebrow }) {
   }
 
   return (
-    <div className="dashboard-page">
+    <div className={`dashboard-page${isTeacher ? ' dashboard-page-teacher' : ''}`}>
       <div className={`dashboard-shell${isSidebarCollapsed ? ' sidebar-collapsed' : ''}`}>
         <Offcanvas show={isSidebarOpen} onHide={() => setIsSidebarOpen(false)} responsive="lg"
-          id="dashboard-navigation" className={`dashboard-sidebar${isSidebarCollapsed ? ' is-collapsed' : ''}`} aria-label="Menú principal">
+          id="dashboard-navigation" className={`dashboard-sidebar${isTeacher ? ' teacher-sidebar' : ''}${isSidebarCollapsed ? ' is-collapsed' : ''}`} aria-label="Menú principal">
           <div className="sidebar-header">
             <div className="sidebar-brand">
               <span className="brand-mark" id="workspace-brand">NUMEX</span>
-              <span>Matemáticas para secundario</span>
+              <span>{isTeacher ? 'Espacio docente' : 'Matemáticas para secundario'}</span>
             </div>
             <button
               type="button"
@@ -107,14 +119,14 @@ function DashboardLayout({ children, eyebrow }) {
                 : displayName.charAt(0).toUpperCase()}
             </div>
             <div className="profile-details">
-              <p className="profile-label">Tu espacio</p>
+              <p className="profile-label">{isTeacher ? 'Docente' : 'Tu espacio'}</p>
               <h4>{displayName}</h4>
-              {profile?.anio_cursada && <span className="profile-school-year">{profile.anio_cursada}° año de secundaria</span>}
+              {profile?.anio_cursada && <span className="profile-school-year">{isTeacher ? 'Enseñás en ' : ''}{profile.anio_cursada}° año{isTeacher ? '' : ' de secundaria'}</span>}
             </div>
           </div>
 
           <nav className="sidebar-nav" aria-label="Navegación principal">
-            <p className="sidebar-section-label">Mi aprendizaje</p>
+            <p className="sidebar-section-label">{workspaceLabel}</p>
             {navItems.map((item) => (
               <button
                 key={item.label}
@@ -157,16 +169,20 @@ function DashboardLayout({ children, eyebrow }) {
               >
                 <i className="bi bi-list" aria-hidden="true" />
               </button>
-              <div className="topbar-breadcrumb"><span>Mi aprendizaje</span><i className="bi bi-chevron-right" aria-hidden="true" /><p className="dashboard-eyebrow">{eyebrow}</p></div>
+              <div className="topbar-breadcrumb"><span>{workspaceLabel}</span><i className="bi bi-chevron-right" aria-hidden="true" /><p className="dashboard-eyebrow">{eyebrow}</p></div>
             </div>
             <div className="header-actions">
               <time className="current-date" dateTime={new Date().toISOString().split('T')[0]}>
                 <i className="bi bi-calendar-event-fill" aria-hidden="true" />
                 <span>{formattedDate}</span>
               </time>
-              <button type="button" className="header-action" aria-label="Notificaciones">
-                <i className="bi bi-bell-fill" aria-hidden="true" />
-              </button>
+              {isTeacher ? (
+                <span className="teacher-role-badge"><i className="bi bi-person-workspace" aria-hidden="true" /> Docente</span>
+              ) : (
+                <button type="button" className="header-action" aria-label="Notificaciones">
+                  <i className="bi bi-bell-fill" aria-hidden="true" />
+                </button>
+              )}
             </div>
           </header>
           {logoutError && <Alert variant="danger" role="alert">{logoutError}</Alert>}

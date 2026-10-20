@@ -1,9 +1,27 @@
-# Registro de alumnos
+# Registro de alumnos y docentes
 
 El formulario de `/register` crea la cuenta y el perfil mediante
-`POST /api/auth/register`. Por ahora solo se registran alumnos; el backend
-asigna el rol `3` y calcula el ciclo según la institución y el año escolar.
+`POST /api/auth/register`. En el segundo paso se elige Alumno o Docente y se
+envía `tipo_cuenta` (`alumno` o `docente`). El backend asigna el rol `3` o `2`,
+respectivamente, y calcula el ciclo según la institución y el año escolar.
+Para docentes, el año corresponde al curso en el que enseñan. Los alumnos usan
+`profile_alumno` y los docentes su propio modelo `profile_docente`.
+La sesión docente vincula `user.id_profile_docente` con `profile.id` y no
+requiere el campo de diagnóstico de los alumnos.
+Es necesario actualizar también `NUMEX-BACKEND` para que respete esta selección.
+Si la base ya existe, detené el backend y ejecutá allí
+`npm run migrate:teacher-profiles` antes de reiniciarlo. La migración conserva
+las cuentas y los cursos de los docentes registrados; ver `NUMEX-BACKEND/AUTH.md`.
 La foto es opcional y se guarda como una URL HTTP/HTTPS.
+
+Al seleccionar **Docente** aparece el campo obligatorio **Código de verificación**.
+Se envía como `codigo_verificacion` y el backend lo compara con una clave activa
+de la tabla `registration_codes`. La clave es reutilizable y no se envía por email.
+Los alumnos no necesitan código. La clave válida no se incluye en el frontend.
+
+Antes de registrar docentes, creá la tabla y cargá tu clave siguiendo
+`NUMEX-BACKEND/AUTH.md`, sección **Clave de verificación para docentes**.
+En la base se guarda su hash SHA-256; en el formulario se ingresa la clave original.
 
 Para probarlo:
 
@@ -12,7 +30,8 @@ Para probarlo:
 2. En este proyecto, ejecutá `npm run dev` y abrí `/register`.
    El proxy ya apunta a `http://127.0.0.1:3000`. Si cambia el destino,
    copiá `.env.example` a `.env.local`, ajustá `BACKEND_URL` y reiniciá Vite.
-3. Completá ambos pasos. Una respuesta exitosa muestra la confirmación en
+3. Completá ambos pasos e ingresá la clave si elegiste Docente.
+   Una respuesta exitosa muestra la confirmación en
    `/login`; un error mantiene los datos para corregirlos o reintentar.
 
 Se validan la confirmación de contraseña, la fecha de nacimiento, el DNI y
@@ -29,7 +48,7 @@ Pruebas del frontend: `node --test tests/*.test.js`. Validaciones adicionales:
 # Inicio y cierre de sesión
 
 `/login` envía email y contraseña a `POST /api/auth/login` y luego consulta
-`GET /api/auth/profile` para confirmar la sesión y cargar el perfil del alumno.
+`GET /api/auth/profile` para confirmar la sesión y cargar el perfil según su rol.
 La API mantiene la sesión durante una hora mediante una cookie HttpOnly.
 No se guardan contraseñas ni tokens en localStorage ni se imprimen en consola.
 
@@ -43,9 +62,40 @@ mediante `POST /api/auth/logout`. El saludo y los datos enviados al diagnóstico
 usan el alumno autenticado. Las opciones de recordar sesión por más tiempo
 y recuperar contraseña quedan pendientes de soporte en el backend.
 
+# Vista del docente
+
+Las cuentas con `user.id_rol === 2` ingresan a un inicio propio con su nombre,
+año de referencia y ciclo. El menú ofrece **Inicio**, **Mis cursos**,
+**Alumnos**, **Actividades**, **Progreso del grupo** y **Biblioteca**.
+
+En **Mis cursos** (`/teacher/courses`) el docente puede crear cursos con
+**Curso**, **Materia** y **Descripción** opcional. El servidor genera un código
+de acceso único de 10 caracteres y vincula el curso al docente autenticado.
+El listado se carga desde MySQL y permite seleccionar o copiar cada código.
+Un error al guardar conserva los datos del formulario para reintentar.
+
+El frontend usa `GET /api/courses` y `POST /api/courses`. Reiniciá el backend
+para que cree la tabla `courses`; también está disponible la migración
+`NUMEX-BACKEND/migrations/20261020_create_courses.sql`.
+Vite reenvía `/api/courses` a `BACKEND_URL`, igual que `/api/auth`.
+En producción deben reenviarse ambas rutas al backend desde el mismo origen.
+El contrato completo está en `NUMEX-BACKEND/COURSES.md`.
+
+**Alumnos**, **Actividades** y **Progreso del grupo** siguen indicando
+**En preparación**. La inscripción de alumnos mediante el código del curso
+todavía no está implementada. La biblioteca y sus recursos existentes sí
+se pueden consultar.
+
+Las rutas de desafíos, diagnóstico y progreso individual corresponden a la
+vista de alumnos; si un docente abre una de ellas, vuelve a su inicio.
+Un alumno que abre `/teacher/...` también vuelve a su propio inicio.
+La selección de vistas usa el rol de la sesión autenticada; no concede
+permisos adicionales en la API.
+
 # Diagnóstico con n8n
 
-El modal inicial depende de `profile.test_diagnostic_completed`, recibido en
+El modal inicial se muestra solo a alumnos (`user.id_rol === 3`) y depende de
+`profile.test_diagnostic_completed`, recibido en
 `GET /api/auth/profile`: con `false` se muestra automáticamente; con `true`
 se omite. Se actualiza cuando se refresca la sesión. La marca antigua
 `numex_diagnostic_modal_seen` y los resultados locales no determinan si el

@@ -48,3 +48,17 @@ test('accepts an empty topic breakdown and practice queue without inventing cont
   profile.practica_diaria = { cantidad_recomendada: 0, cola_inicial: [] }
   assert.deepEqual(parseCorrectionProfile(profile), profile)
 })
+
+test('accepts the correction profile with anio_cursada instead of anio_ingreso', () => {
+  const profile = structuredClone(response[0])
+  profile.alumno = { nombre: 'Jose', anio_cursada: 4 }
+  assert.deepEqual(parseCorrectionProfile([profile], profile.test_id), profile)
+})
+
+test('rejects invalid curricular years even if an old entry year is present', () => {
+  for (const schoolYear of [0, 7, 2023, 2.5, '4']) {
+    const profile = structuredClone(response[0])
+    profile.alumno.anio_cursada = schoolYear
+    assert.equal(parseCorrectionProfile(profile), null)
+  }
+})

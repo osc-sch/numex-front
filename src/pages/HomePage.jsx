@@ -14,7 +14,7 @@ const DIAGNOSTIC_WEBHOOK_URL = import.meta.env.DEV
 
 function HomePage({ latestTestResult = null, resultSaved = true }) {
   const { user, profile } = useAuth()
-  const diagnosticPending = profile.test_diagnostic_completed === false
+  const diagnosticPending = user.id_rol === 3 && profile.test_diagnostic_completed === false
   const [isStartingDiagnostic, setIsStartingDiagnostic] = useState(false)
   const [diagnosticError, setDiagnosticError] = useState('')
 

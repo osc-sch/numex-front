@@ -137,5 +137,5 @@ test('a profile from a different test cannot replace the summary student or topi
   ))
   const summary = summarizeTestResult({ ...result, correctionProfile: profile })
   assert.equal(summary.profile, null)
-  assert.deepEqual(summary.student, sessionData.alumno)
+  assert.deepEqual(summary.student, { nombre: 'Jose', anio_cursada: 4 })
 })

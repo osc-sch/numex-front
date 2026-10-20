@@ -46,9 +46,12 @@ export const logout = () => request('/logout', { method: 'POST' })
 export async function getSession(options) {
   try {
     const data = await request('/profile', options)
+    const isTeacher = data.user?.id_rol === 2
+    const profileId = isTeacher ? data.user?.id_profile_docente : data.user?.id_profile
     if (!Number.isInteger(data.user?.id) || data.user.id <= 0 ||
-        !Number.isInteger(data.profile?.id) || data.profile.id <= 0 || data.user.id_profile !== data.profile.id ||
-        typeof data.profile.test_diagnostic_completed !== 'boolean') {
+        !Number.isInteger(data.user.id_rol) || data.user.id_rol <= 0 ||
+        !Number.isInteger(data.profile?.id) || data.profile.id <= 0 || profileId !== data.profile.id ||
+        (isTeacher ? data.user.id_profile != null : typeof data.profile.test_diagnostic_completed !== 'boolean')) {
       throw new AuthError('No se pudo recuperar tu perfil.', 500)
     }
     return data

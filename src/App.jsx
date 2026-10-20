@@ -11,6 +11,11 @@ import LoginPage from './pages/LoginPage'
 import ProgressPage from './pages/ProgressPage'
 import RegisterPage from './pages/RegisterPage'
 import TopicDetailPage from './pages/TopicDetailPage'
+import TeacherHomePage from './pages/TeacherHomePage'
+import TeacherCoursesPage from './pages/TeacherCoursesPage'
+import TeacherSectionPage from './pages/TeacherSectionPage'
+import StudentCoursesPage from './pages/StudentCoursesPage'
+import { teacherSections } from './data/teacherWorkspace'
 import { loadLatestTestResult, saveLatestTestResult } from './utils/testResults'
 
 function App() {
@@ -30,6 +35,27 @@ function App() {
 
 function AuthenticatedApp() {
   const { user } = useAuth()
+  return user.id_rol === 2 ? <TeacherApp /> : <StudentApp />
+}
+
+function TeacherApp() {
+  return (
+    <Routes>
+      <Route path="/" element={<TeacherHomePage />} />
+      <Route path="/home" element={<Navigate to="/" replace />} />
+      <Route path="/teacher/courses" element={<TeacherCoursesPage />} />
+      {teacherSections.filter(section => section.id !== 'courses').map(section => (
+        <Route key={section.id} path={section.path} element={<TeacherSectionPage section={section} />} />
+      ))}
+      <Route path="/library" element={<LibraryPage />} />
+      <Route path="/library/topic/:slug" element={<TopicDetailPage />} />
+      <Route path="*" element={<Navigate to="/" replace />} />
+    </Routes>
+  )
+}
+
+function StudentApp() {
+  const { user } = useAuth()
   const location = useLocation()
   const [latestTestResult, setLatestTestResult] = useState(() => loadLatestTestResult(user.id))
   const [resultSaved, setResultSaved] = useState(true)
@@ -46,6 +72,7 @@ function AuthenticatedApp() {
         element={<HomePage latestTestResult={latestTestResult} resultSaved={resultSaved} />}
       />
       <Route path="/home" element={<Navigate to="/" replace />} />
+      <Route path="/courses" element={<StudentCoursesPage />} />
 
       <Route path="/challenges" element={<ChallengesPage />} />
       <Route path="/progress" element={<ProgressPage />} />

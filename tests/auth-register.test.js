@@ -20,6 +20,36 @@ test('register sends JSON through the auth proxy and returns the created student
   assert.deepEqual(JSON.parse(options.body), payload)
 })
 
+test('register sends the selected account type and returns the assigned role', async (context) => {
+  const fetchMock = context.mock.method(globalThis, 'fetch')
+  for (const [tipo_cuenta, id_rol] of [['alumno', 3], ['docente', 2]]) {
+    const result = {
+      ...success,
+      user: {
+        ...success.user, id_rol,
+        id_profile: tipo_cuenta === 'docente' ? null : success.profile.id,
+        id_profile_docente: tipo_cuenta === 'docente' ? success.profile.id : null,
+      },
+    }
+    fetchMock.mock.mockImplementation(async () => Response.json(result, { status: 201 }))
+    const registration = {
+      ...payload, tipo_cuenta,
+      ...(tipo_cuenta === 'docente' ? { codigo_verificacion: 'clave-docente-de-prueba' } : {}),
+    }
+    assert.deepEqual(await register(registration), result)
+    assert.deepEqual(JSON.parse(fetchMock.mock.calls.at(-1).arguments[1].body), registration)
+  }
+})
+
+test('register displays the rejected teacher verification code without reporting success', async (context) => {
+  context.mock.method(globalThis, 'fetch', async () => Response.json(
+    { message: 'El código de verificación no es válido.' }, { status: 403 },
+  ))
+  await assert.rejects(register({
+    ...payload, tipo_cuenta: 'docente', codigo_verificacion: 'clave-incorrecta',
+  }), { name: 'AuthError', status: 403, message: 'El código de verificación no es válido.' })
+})
+
 test('register surfaces duplicate and validation errors for display in the form', async (context) => {
   const fetchMock = context.mock.method(globalThis, 'fetch', async () => Response.json(
     { message: 'El DNI ya está registrado' }, { status: 409 }

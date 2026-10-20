@@ -80,6 +80,28 @@ test('session recovery rejects incomplete or mismatched account data', async (co
   }
 })
 
+test('teachers recover their own profile without a student diagnostic state', async (context) => {
+  const teacherSession = {
+    user: { ...session.user, id_rol: 2, id_profile: null, id_profile_docente: 12 },
+    profile: { id: 12, nombre: 'Docente', anio_cursada: 4 },
+  }
+  context.mock.method(globalThis, 'fetch', async () => Response.json(teacherSession))
+  assert.deepEqual(await getSession(), teacherSession)
+})
+
+test('teacher sessions reject student profiles, absent links and mismatched teacher IDs', async (context) => {
+  const fetchMock = context.mock.method(globalThis, 'fetch', async () => Response.json({}))
+  for (const user of [
+    { ...session.user, id_rol: 2 },
+    { ...session.user, id_rol: 2, id_profile: null },
+    { ...session.user, id_rol: 2, id_profile: null, id_profile_docente: 99 },
+    { ...session.user, id_rol: 2, id_profile_docente: session.profile.id },
+  ]) {
+    fetchMock.mock.mockImplementation(async () => Response.json({ user, profile: session.profile }))
+    await assert.rejects(getSession(), /recuperar tu perfil/)
+  }
+})
+
 test('session requests retain their timeout even when the caller provides a cleanup signal', async (context) => {
   const cleanup = new AbortController()
   const deadline = new AbortController()
