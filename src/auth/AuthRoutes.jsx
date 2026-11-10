@@ -16,11 +16,14 @@ function SessionStatus() {
 }
 
 export function RequireAuth() {
-  const { status } = useAuth()
+  const { status, error } = useAuth()
   const location = useLocation()
   if (status === 'loading' || status === 'error') return <SessionStatus />
   if (status !== 'authenticated') {
-    return <Navigate to="/login" replace state={{ from: location.pathname + location.search + location.hash }} />
+    return <Navigate to="/login" replace state={{
+      from: location.pathname + location.search + location.hash,
+      apiError: error,
+    }} />
   }
   return <Outlet />
 }

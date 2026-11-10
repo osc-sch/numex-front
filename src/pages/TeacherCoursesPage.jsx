@@ -1,14 +1,17 @@
 import { useEffect, useRef, useState } from 'react'
 import { Alert, Button, Form, Modal, Spinner } from 'react-bootstrap'
+import { Link } from 'react-router-dom'
+import { useAuth } from '../auth/authContext'
 import DashboardLayout from '../components/DashboardLayout'
-import { createCourse, getCourses } from '../services/courses'
+import { createCourse, deleteCourse, getCourse, getCourses, updateCourse } from '../services/courses'
 
-function CourseCard({ course }) {
+function CourseCard({ course, onEdit, onDelete, isEditing, isDeleting }) {
   const [copied, setCopied] = useState(false)
   const [copyError, setCopyError] = useState('')
   const [isCopying, setIsCopying] = useState(false)
 
   const copyCode = async () => {
+    if (!course.codigo_acceso) return
     setCopyError('')
     setIsCopying(true)
     try {
@@ -33,8 +36,8 @@ function CourseCard({ course }) {
       <p className="teacher-course-description">{course.descripcion || 'Sin descripción.'}</p>
       <div className="teacher-course-access">
         <div>
-          <label htmlFor={`course-code-${course.id}`}>Código de acceso</label>
-          <input id={`course-code-${course.id}`} type="text" readOnly value={course.codigo_acceso}
+          <label htmlFor={`course-code-${course._id}`}>Código de acceso</label>
+          <input id={`course-code-${course._id}`} type="text" readOnly value={course.codigo_acceso}
             aria-label={`Código de acceso de ${course.curso}`} onFocus={event => event.target.select()} />
         </div>
         <Button variant="outline-secondary" onClick={copyCode} disabled={isCopying}
@@ -44,27 +47,50 @@ function CourseCard({ course }) {
         </Button>
       </div>
       {copyError && <p className="teacher-course-copy-error" role="alert">{copyError}</p>}
+      <div className="d-flex flex-wrap gap-2 mt-3">
+        <Link className="btn btn-outline-success" to={`/teacher/courses/${encodeURIComponent(course._id)}`}>
+          <i className="bi bi-journal-text" aria-hidden="true" /> Secciones
+        </Link>
+        <Button variant="outline-primary" onClick={() => onEdit(course)} disabled={isEditing || isDeleting}>
+          {isEditing ? <><Spinner size="sm" animation="border" aria-hidden="true" /> Cargando…</> : 'Editar'}
+        </Button>
+        <Button variant="outline-danger" onClick={() => onDelete(course)} disabled={isEditing || isDeleting}>
+          {isDeleting ? <><Spinner size="sm" animation="border" aria-hidden="true" /> Eliminando…</> : 'Eliminar'}
+        </Button>
+      </div>
     </article>
   )
 }
 
 function TeacherCoursesPage() {
+  const { user, profile } = useAuth()
   const [courses, setCourses] = useState([])
   const [isLoading, setIsLoading] = useState(true)
   const [loadError, setLoadError] = useState('')
   const [refreshVersion, setRefreshVersion] = useState(0)
   const [showForm, setShowForm] = useState(false)
+  const [editingCourse, setEditingCourse] = useState(null)
+  const [isEditingCourse, setIsEditingCourse] = useState(null)
   const [draft, setDraft] = useState({ curso: '', descripcion: '', materia: '' })
   const [formError, setFormError] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [success, setSuccess] = useState('')
+  const [actionError, setActionError] = useState('')
+  const [deletingCourse, setDeletingCourse] = useState(null)
+  const [isDeleting, setIsDeleting] = useState(false)
   const submitting = useRef(false)
 
   useEffect(() => {
     const controller = new AbortController()
-    getCourses({ signal: controller.signal }).then(data => {
+    const teacherIds = [
+      user?.id_profile_docente,
+      user?.id_profile,
+      profile?.id,
+      user?.id,
+    ].filter(id => id != null)
+    getCourses({ signal: controller.signal, teacherIds }).then(data => {
       if (controller.signal.aborted) return
-      setCourses(data)
+      setCourses(Array.isArray(data) ? data : [])
       setLoadError('')
     }).catch(error => {
       if (!controller.signal.aborted) setLoadError(error.message || 'No se pudieron cargar tus cursos.')
@@ -72,7 +98,7 @@ function TeacherCoursesPage() {
       if (!controller.signal.aborted) setIsLoading(false)
     })
     return () => controller.abort()
-  }, [refreshVersion])
+  }, [profile?.id, refreshVersion, user?.id, user?.id_profile, user?.id_profile_docente])
 
   const reloadCourses = () => {
     setIsLoading(true)
@@ -81,6 +107,7 @@ function TeacherCoursesPage() {
   }
 
   const openForm = () => {
+    setEditingCourse(null)
     setDraft({ curso: '', descripcion: '', materia: '' })
     setFormError('')
     setShowForm(true)
@@ -90,7 +117,27 @@ function TeacherCoursesPage() {
     if (!submitting.current) setShowForm(false)
   }
 
-  const handleCreate = async event => {
+  const openEditForm = async course => {
+    setActionError('')
+    setEditingCourse(course)
+    setIsEditingCourse(course._id)
+    try {
+      const currentCourse = await getCourse(course._id)
+      setDraft({
+        curso: currentCourse.curso,
+        descripcion: currentCourse.descripcion,
+        materia: currentCourse.materia,
+      })
+      setFormError('')
+      setShowForm(true)
+    } catch (error) {
+      setActionError(error.message || 'No se pudo cargar el curso para editarlo.')
+    } finally {
+      setIsEditingCourse(null)
+    }
+  }
+
+  const handleSave = async event => {
     event.preventDefault()
     if (submitting.current) return
     const form = event.currentTarget
@@ -105,20 +152,42 @@ function TeacherCoursesPage() {
     setIsSubmitting(true)
     setFormError('')
     try {
-      const course = await createCourse({
+      const data = {
         curso: draft.curso.trim(),
         descripcion: draft.descripcion.trim(),
         materia: draft.materia.trim(),
-      })
-      setCourses(current => [course, ...current.filter(item => item.id !== course.id)])
-      setSuccess(`El curso “${course.curso}” se creó correctamente. Su código de acceso ya está disponible.`)
+      }
+      const course = editingCourse
+        ? await updateCourse(editingCourse._id, data)
+        : await createCourse(data)
+      setCourses(current => editingCourse
+        ? current.map(item => item._id === course._id ? course : item)
+        : [course, ...current.filter(item => item._id !== course._id)])
+      setSuccess(editingCourse
+        ? `El curso “${course.curso}” se actualizó correctamente.`
+        : `El curso “${course.curso}” se creó correctamente. Su código de acceso ya está disponible.`)
       setShowForm(false)
-      reloadCourses()
     } catch (error) {
-      setFormError(error.message || 'No se pudo crear el curso. Intentá nuevamente.')
+      setFormError(error.message || 'No se pudo guardar el curso. Intentá nuevamente.')
     } finally {
       submitting.current = false
       setIsSubmitting(false)
+    }
+  }
+
+  const handleDelete = async () => {
+    if (!deletingCourse || isDeleting) return
+    setIsDeleting(true)
+    setActionError('')
+    try {
+      await deleteCourse(deletingCourse._id)
+      setCourses(current => current.filter(course => course._id !== deletingCourse._id))
+      setSuccess(`El curso “${deletingCourse.curso}” se eliminó correctamente.`)
+      setDeletingCourse(null)
+    } catch (error) {
+      setActionError(error.message || 'No se pudo eliminar el curso. Intentá nuevamente.')
+    } finally {
+      setIsDeleting(false)
     }
   }
 
@@ -143,6 +212,7 @@ function TeacherCoursesPage() {
         </header>
 
         {success && <Alert variant="success" dismissible onClose={() => setSuccess('')} role="status">{success}</Alert>}
+        {actionError && <Alert variant="danger" dismissible onClose={() => setActionError('')} role="alert">{actionError}</Alert>}
         {loadError && (
           <Alert variant="danger" role="alert">
             <p>{loadError}</p>
@@ -162,17 +232,28 @@ function TeacherCoursesPage() {
         )}
         {courses.length > 0 && (
           <div className="teacher-courses-grid">
-            {courses.map(course => <CourseCard key={course.id} course={course} />)}
+            {courses.map(course => (
+              <CourseCard
+                key={course._id}
+                course={course}
+                onEdit={openEditForm}
+                onDelete={setDeletingCourse}
+                isEditing={isEditingCourse === course._id}
+                isDeleting={isDeleting && deletingCourse?._id === course._id}
+              />
+            ))}
           </div>
         )}
       </section>
 
       <Modal show={showForm} onHide={closeForm} centered className="dashboard-modal teacher-course-modal"
         backdrop={isSubmitting ? 'static' : true} keyboard={!isSubmitting}>
-        <Modal.Header closeButton={!isSubmitting}><Modal.Title>Crear curso</Modal.Title></Modal.Header>
-        <Form noValidate onSubmit={handleCreate} aria-busy={isSubmitting}>
+        <Modal.Header closeButton={!isSubmitting}><Modal.Title>{editingCourse ? 'Editar curso' : 'Crear curso'}</Modal.Title></Modal.Header>
+        <Form noValidate onSubmit={handleSave} aria-busy={isSubmitting}>
           <Modal.Body>
-            <p className="teacher-course-form-intro">Dale un nombre a tu espacio y contá qué van a trabajar.</p>
+            <p className="teacher-course-form-intro">
+              {editingCourse ? 'Actualizá el nombre, la materia o la descripción del curso.' : 'Dale un nombre a tu espacio y contá qué van a trabajar.'}
+            </p>
             {formError && <Alert variant="danger" role="alert">{formError}</Alert>}
             <fieldset disabled={isSubmitting}>
               <Form.Group className="mb-3" controlId="courseName">
@@ -192,19 +273,38 @@ function TeacherCoursesPage() {
                   maxLength={2000} aria-describedby="courseDescriptionHelp" />
                 <Form.Text id="courseDescriptionHelp">Hasta 2000 caracteres.</Form.Text>
               </Form.Group>
-              <div className="teacher-course-code-note">
+              {!editingCourse && <div className="teacher-course-code-note">
                 <i className="bi bi-key" aria-hidden="true" />
                 <div><strong>Código de acceso automático</strong><p>Al guardar, tu curso recibirá un código único. Podrás verlo y copiarlo desde Mis cursos.</p></div>
-              </div>
+              </div>}
             </fieldset>
           </Modal.Body>
           <Modal.Footer>
             <Button variant="outline-secondary" onClick={closeForm} disabled={isSubmitting}>Cancelar</Button>
             <Button type="submit" disabled={isSubmitting}>
-              {isSubmitting ? <><Spinner size="sm" animation="border" aria-hidden="true" /> Creando curso…</> : 'Crear curso'}
+              {isSubmitting
+                ? <><Spinner size="sm" animation="border" aria-hidden="true" /> Guardando…</>
+                : editingCourse ? 'Guardar cambios' : 'Crear curso'}
             </Button>
           </Modal.Footer>
         </Form>
+      </Modal>
+
+      <Modal show={Boolean(deletingCourse)} onHide={() => !isDeleting && setDeletingCourse(null)}
+        centered className="dashboard-modal" backdrop={isDeleting ? 'static' : true} keyboard={!isDeleting}>
+        <Modal.Header closeButton={!isDeleting}>
+          <Modal.Title>Eliminar curso</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          <p>¿Seguro que querés eliminar “{deletingCourse?.curso}”? Esta acción no se puede deshacer.</p>
+          {actionError && <Alert variant="danger" role="alert">{actionError}</Alert>}
+        </Modal.Body>
+        <Modal.Footer>
+          <Button variant="outline-secondary" onClick={() => setDeletingCourse(null)} disabled={isDeleting}>Cancelar</Button>
+          <Button variant="danger" onClick={handleDelete} disabled={isDeleting}>
+            {isDeleting ? <><Spinner size="sm" animation="border" aria-hidden="true" /> Eliminando…</> : 'Eliminar curso'}
+          </Button>
+        </Modal.Footer>
       </Modal>
     </DashboardLayout>
   )

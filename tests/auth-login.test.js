@@ -9,7 +9,7 @@ const session = {
 }
 
 test('login sends credentials using the cookie-based auth API', async (context) => {
-  const credentials = { email: 'alumno@example.com', password: ' Clave con espacios ' }
+  const credentials = { user_name: 'alumno@example.com', password: ' Clave con espacios ' }
   const fetchMock = context.mock.method(globalThis, 'fetch', async () => Response.json({ user: session.user }))
   await login(credentials)
   const [url, options] = fetchMock.mock.calls[0].arguments
@@ -21,8 +21,14 @@ test('login sends credentials using the cookie-based auth API', async (context) 
   assert.deepEqual(JSON.parse(options.body), credentials)
 })
 
+test('login accepts an empty success response because the session is stored in the cookie', async (context) => {
+  const fetchMock = context.mock.method(globalThis, 'fetch', async () => new Response(null, { status: 204 }))
+  assert.deepEqual(await login({ user_name: 'alumno', password: 'Clave válida' }), {})
+  assert.equal(fetchMock.mock.calls[0].arguments[1].credentials, 'include')
+})
+
 test('login propagates rejected credentials and connection failures without exposing the password', async (context) => {
-  const credentials = { email: 'alumno@example.com', password: 'private-test-value' }
+  const credentials = { user_name: 'alumno', password: 'private-test-value' }
   const fetchMock = context.mock.method(globalThis, 'fetch', async () => Response.json(
     { message: 'Credenciales inválidas' }, { status: 401 }
   ))
@@ -40,6 +46,16 @@ test('session recovery sends cookies and returns the matching user and profile',
   assert.equal(options.cache, 'no-store')
 })
 
+test('session recovery accepts matching Mongo-style string IDs from the API', async (context) => {
+  const id = '6af10ba16fd5f65dcf449bdd'
+  const mongoSession = {
+    user: { id, id_rol: 3, id_profile: id, user_name: 'alumno', email: 'alumno@example.com' },
+    profile: { id, nombre: 'Ana', anio_cursada: 4, test_diagnostic_completed: false },
+  }
+  context.mock.method(globalThis, 'fetch', async () => Response.json(mongoSession))
+  assert.deepEqual(await getSession(), mongoSession)
+})
+
 test('an expired session becomes anonymous, while server errors remain recoverable errors', async (context) => {
   const fetchMock = context.mock.method(globalThis, 'fetch', async () => Response.json(
     { message: 'Sesión inválida o expirada' }, { status: 401 }
@@ -47,6 +63,8 @@ test('an expired session becomes anonymous, while server errors remain recoverab
   assert.equal(await getSession(), null)
   fetchMock.mock.mockImplementation(async () => Response.json({ message: 'Servicio no disponible' }, { status: 503 }))
   await assert.rejects(getSession(), { status: 503 })
+  fetchMock.mock.mockImplementation(async () => Response.json({ message: 'Cannot GET /api/auth/profile' }, { status: 404 }))
+  await assert.rejects(getSession(), { status: 404 })
 })
 
 test('session recovery preserves either boolean diagnostic state from the backend', async (context) => {
@@ -73,6 +91,7 @@ test('session recovery rejects incomplete or mismatched account data', async (co
   for (const data of [
     {}, { user: session.user }, { ...session, profile: {} },
     { ...session, user: { ...session.user, id: 0 } },
+    { ...session, user: { ...session.user, id: ' ' } },
     { ...session, profile: { ...session.profile, id: 9 } },
   ]) {
     fetchMock.mock.mockImplementation(async () => Response.json(data))
@@ -82,20 +101,30 @@ test('session recovery rejects incomplete or mismatched account data', async (co
 
 test('teachers recover their own profile without a student diagnostic state', async (context) => {
   const teacherSession = {
-    user: { ...session.user, id_rol: 2, id_profile: null, id_profile_docente: 12 },
-    profile: { id: 12, nombre: 'Docente', anio_cursada: 4 },
+    user: { ...session.user, id: 'teacher-1', id_rol: 2, id_profile: null, id_profile_docente: 'profile-12' },
+    profile: { id: 'profile-12', nombre: 'Docente', anio_cursada: 4 },
   }
   context.mock.method(globalThis, 'fetch', async () => Response.json(teacherSession))
   assert.deepEqual(await getSession(), teacherSession)
 })
 
-test('teacher sessions reject student profiles, absent links and mismatched teacher IDs', async (context) => {
+test('teachers can use the shared id_profile relation returned by the API', async (context) => {
+  const id = '6af10ba16fd5f65dcf449bdd'
+  const teacherSession = {
+    user: { id, id_rol: 2, id_profile: id, user_name: 'docente', email: 'docente@example.com' },
+    profile: { id, nombre: 'Docente', anio_cursada: 4 },
+  }
+  context.mock.method(globalThis, 'fetch', async () => Response.json(teacherSession))
+  assert.deepEqual(await getSession(), teacherSession)
+})
+
+test('teacher sessions reject missing or mismatched profile links', async (context) => {
   const fetchMock = context.mock.method(globalThis, 'fetch', async () => Response.json({}))
   for (const user of [
-    { ...session.user, id_rol: 2 },
-    { ...session.user, id_rol: 2, id_profile: null },
+    { ...session.user, id_rol: 2, id_profile: null, id_profile_docente: null },
     { ...session.user, id_rol: 2, id_profile: null, id_profile_docente: 99 },
-    { ...session.user, id_rol: 2, id_profile_docente: session.profile.id },
+    { ...session.user, id_rol: 2, id_profile: 99, id_profile_docente: null },
+    { ...session.user, id_rol: 2, id_profile: session.profile.id, id_profile_docente: 99 },
   ]) {
     fetchMock.mock.mockImplementation(async () => Response.json({ user, profile: session.profile }))
     await assert.rejects(getSession(), /recuperar tu perfil/)
@@ -128,7 +157,7 @@ test('session requests can be cancelled when the provider unmounts', async (cont
 })
 
 test('logout clears the server session through a credentialed POST', async (context) => {
-  const fetchMock = context.mock.method(globalThis, 'fetch', async () => Response.json({ message: 'Sesión cerrada correctamente' }))
+  const fetchMock = context.mock.method(globalThis, 'fetch', async () => new Response(null, { status: 204 }))
   await logout()
   const [url, options] = fetchMock.mock.calls[0].arguments
   assert.equal(url, '/api/auth/logout')

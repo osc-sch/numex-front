@@ -6,7 +6,11 @@ export class AuthError extends Error {
   }
 }
 
-async function request(path, { body, signal, ...options } = {}) {
+function isValidId(value) {
+  return (Number.isInteger(value) && value > 0) || (typeof value === 'string' && value.trim().length > 0)
+}
+
+async function request(path, { body, signal, allowEmptyResponse = false, ...options } = {}) {
   let response
   try {
     response = await fetch(`/api/auth${path}`, {
@@ -29,29 +33,36 @@ async function request(path, { body, signal, ...options } = {}) {
       response.status,
     )
   }
-  if (!data) throw new AuthError('El servidor devolvió una respuesta inválida.', response.status)
-  return data
+  if (!data && !allowEmptyResponse) throw new AuthError('El servidor devolvió una respuesta inválida.', response.status)
+  return data ?? {}
 }
 
-export const login = (credentials) => request('/login', { method: 'POST', body: credentials })
+export const login = (credentials) => request('/login', {
+  method: 'POST',
+  body: credentials,
+  allowEmptyResponse: true,
+})
 export async function register(data) {
   const result = await request('/register', { method: 'POST', body: data })
-  if (!Number.isInteger(result.user?.id) || !Number.isInteger(result.profile?.id)) {
+  if (!isValidId(result.user?.id) || !isValidId(result.profile?.id)) {
     throw new AuthError('El servidor no pudo confirmar el registro. Intentá iniciar sesión antes de volver a registrarte.', 502)
   }
   return result
 }
-export const logout = () => request('/logout', { method: 'POST' })
+export const logout = () => request('/logout', { method: 'POST', allowEmptyResponse: true })
 
 export async function getSession(options) {
   try {
     const data = await request('/profile', options)
     const isTeacher = data.user?.id_rol === 2
-    const profileId = isTeacher ? data.user?.id_profile_docente : data.user?.id_profile
-    if (!Number.isInteger(data.user?.id) || data.user.id <= 0 ||
+    const profileIds = isTeacher
+      ? [data.user?.id_profile_docente, data.user?.id_profile].filter(id => id != null)
+      : [data.user?.id_profile]
+    if (!isValidId(data.user?.id) ||
         !Number.isInteger(data.user.id_rol) || data.user.id_rol <= 0 ||
-        !Number.isInteger(data.profile?.id) || data.profile.id <= 0 || profileId !== data.profile.id ||
-        (isTeacher ? data.user.id_profile != null : typeof data.profile.test_diagnostic_completed !== 'boolean')) {
+        !isValidId(data.profile?.id) || profileIds.length === 0 ||
+        profileIds.some(id => id !== data.profile.id) ||
+        (!isTeacher && typeof data.profile.test_diagnostic_completed !== 'boolean')) {
       throw new AuthError('No se pudo recuperar tu perfil.', 500)
     }
     return data

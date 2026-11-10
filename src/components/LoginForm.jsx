@@ -4,7 +4,7 @@ import { Link, useLocation } from 'react-router-dom'
 import { useAuth } from '../auth/authContext'
 
 function LoginForm() {
-  const { login } = useAuth()
+  const { login, status, error: sessionError } = useAuth()
   const { state } = useLocation()
   const submitting = useRef(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -21,16 +21,16 @@ function LoginForm() {
     }
 
     const values = new FormData(event.currentTarget)
-    const email = values.get('email').trim().toLowerCase()
+    const user_name = values.get('user_name').trim()
     const password = values.get('password')
 
     submitting.current = true
     setIsSubmitting(true)
     try {
-      await login({ email, password })
+      await login({ user_name, password })
     } catch (error) {
       setError(error.status === 401
-        ? 'El email o la contraseña son incorrectos.'
+        ? 'El usuario, email o la contraseña son incorrectos.'
         : error.message || 'No se pudo iniciar sesión. Intentá nuevamente.')
     } finally {
       submitting.current = false
@@ -42,6 +42,9 @@ function LoginForm() {
     <Form className="auth-form" onSubmit={handleSubmit} aria-busy={isSubmitting}>
       {state?.registrationSuccess && (
         <Alert variant="success" role="status">Tu cuenta se creó correctamente.</Alert>
+      )}
+      {(state?.apiError || (status === 'anonymous' && sessionError)) && (
+        <Alert variant="warning" role="status">{state?.apiError || sessionError}</Alert>
       )}
       <div className="form-header">
         <span className="brand-mark">NUMEX</span>
@@ -55,10 +58,10 @@ function LoginForm() {
 
       {error && <Alert variant="danger" role="alert">{error}</Alert>}
 
-      <Form.Group className="mb-3" controlId="loginEmail">
-        <Form.Label>Email</Form.Label>
-        <Form.Control name="email" type="email" autoComplete="username" maxLength={254}
-          defaultValue={state?.email || ''} placeholder="tuemail@ejemplo.com" disabled={isSubmitting} required />
+      <Form.Group className="mb-3" controlId="loginUserName">
+        <Form.Label>Usuario o email</Form.Label>
+        <Form.Control name="user_name" type="text" autoComplete="username" maxLength={254}
+          defaultValue={state?.email || ''} placeholder="Tu usuario o email" disabled={isSubmitting} required />
       </Form.Group>
 
       <Form.Group className="mb-3" controlId="loginPassword">

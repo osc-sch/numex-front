@@ -16,7 +16,15 @@ export default function AuthProvider({ children }) {
       }
     }).catch((error) => {
       if (error.name !== 'AbortError' && current === revision.current && !signal?.aborted) {
-        setState({ status: 'error', session: null, error: error.message })
+        if (error.status === 404) {
+          setState({
+            status: 'anonymous',
+            session: null,
+            error: 'No se encontró la ruta de sesión de la API. El inicio de sesión requiere que el backend esté disponible.',
+          })
+        } else {
+          setState({ status: 'error', session: null, error: error.message })
+        }
       }
     })
   }, [])

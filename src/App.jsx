@@ -13,8 +13,16 @@ import RegisterPage from './pages/RegisterPage'
 import TopicDetailPage from './pages/TopicDetailPage'
 import TeacherHomePage from './pages/TeacherHomePage'
 import TeacherCoursesPage from './pages/TeacherCoursesPage'
+import TeacherCourseSectionsPage from './pages/TeacherCourseSectionsPage'
+import TeacherSectionPostsPage from './pages/TeacherSectionPostsPage'
 import TeacherSectionPage from './pages/TeacherSectionPage'
 import StudentCoursesPage from './pages/StudentCoursesPage'
+import StudentCourseDetailPage from './pages/StudentCourseDetailPage'
+import StudentSectionPostPage from './pages/StudentSectionPostPage'
+import TeacherSectionActivitiesPage from './pages/TeacherSectionActivitiesPage'
+import TeacherActivityEditorPage from './pages/TeacherActivityEditorPage'
+import StudentActivityPage from './pages/StudentActivityPage'
+import TeacherActivityTrackingPage from './pages/TeacherActivityTrackingPage'
 import { teacherSections } from './data/teacherWorkspace'
 import { loadLatestTestResult, saveLatestTestResult } from './utils/testResults'
 
@@ -44,6 +52,12 @@ function TeacherApp() {
       <Route path="/" element={<TeacherHomePage />} />
       <Route path="/home" element={<Navigate to="/" replace />} />
       <Route path="/teacher/courses" element={<TeacherCoursesPage />} />
+      <Route path="/teacher/courses/:id" element={<TeacherCourseSectionsPage />} />
+      <Route path="/teacher/courses/:courseId/sections/:sectionId/posts" element={<TeacherSectionPostsPage />} />
+      <Route path="/teacher/courses/:courseId/sections/:sectionId/activities" element={<TeacherSectionActivitiesPage />} />
+      <Route path="/teacher/courses/:courseId/sections/:sectionId/activities/new" element={<TeacherActivityEditorPage />} />
+      <Route path="/teacher/courses/:courseId/sections/:sectionId/activities/:activityId/edit" element={<TeacherActivityEditorPage />} />
+      <Route path="/teacher/courses/:courseId/sections/:sectionId/activities/:activityId/tracking" element={<TeacherActivityTrackingPage />} />
       {teacherSections.filter(section => section.id !== 'courses').map(section => (
         <Route key={section.id} path={section.path} element={<TeacherSectionPage section={section} />} />
       ))}
@@ -73,6 +87,9 @@ function StudentApp() {
       />
       <Route path="/home" element={<Navigate to="/" replace />} />
       <Route path="/courses" element={<StudentCoursesPage />} />
+      <Route path="/courses/:courseId/sections/:sectionId/activities/:activityId" element={<StudentActivityPage />} />
+      <Route path="/courses/:courseId/sections/:sectionId/posts/:postId" element={<StudentSectionPostPage />} />
+      <Route path="/courses/:id" element={<StudentCourseDetailPage />} />
 
       <Route path="/challenges" element={<ChallengesPage />} />
       <Route path="/progress" element={<ProgressPage />} />

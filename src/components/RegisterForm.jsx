@@ -97,13 +97,15 @@ function RegisterForm({ onStepChange }) {
       user_name: values.get('user_name').trim(),
       email: values.get('email').trim().toLowerCase(),
       password: values.get('password'),
-      nombre: values.get('nombre').trim(),
-      apellido: values.get('apellido').trim(),
-      DNI: values.get('DNI').trim(),
-      fecha_nacimiento: values.get('fecha_nacimiento'),
-      tipo_institucion: institutionType,
-      anio_cursada: Number(schoolYear),
-      img_profile: profilePhoto || null,
+      profile: {
+        nombre: values.get('nombre').trim(),
+        apellido: values.get('apellido').trim(),
+        DNI: values.get('DNI').trim(),
+        fecha_nacimiento: values.get('fecha_nacimiento'),
+        tipo_institucion: institutionType,
+        anio_cursada: Number(schoolYear),
+        img_profile: profilePhoto || null,
+      },
     }
 
     submitting.current = true

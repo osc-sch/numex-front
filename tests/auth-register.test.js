@@ -4,8 +4,10 @@ import { AuthError, register } from '../src/services/auth.js'
 
 const payload = {
   user_name: 'alumno', email: 'alumno@example.com', password: 'Clave de prueba 2026!',
-  nombre: 'Ana', apellido: 'Pérez', DNI: '01234567', fecha_nacimiento: '2010-05-10',
-  tipo_institucion: 'tecnica', anio_cursada: 7, img_profile: null,
+  profile: {
+    nombre: 'Ana', apellido: 'Pérez', DNI: '01234567', fecha_nacimiento: '2010-05-10',
+    tipo_institucion: 'tecnica', anio_cursada: 7, img_profile: null,
+  },
 }
 const success = { user: { id: 10, id_rol: 3, id_profile: 20 }, profile: { id: 20 } }
 
@@ -39,6 +41,13 @@ test('register sends the selected account type and returns the assigned role', a
     assert.deepEqual(await register(registration), result)
     assert.deepEqual(JSON.parse(fetchMock.mock.calls.at(-1).arguments[1].body), registration)
   }
+})
+
+test('register accepts Mongo-style string IDs returned by the API', async (context) => {
+  const id = '6af10ba16fd5f65dcf449bdd'
+  const result = { user: { id, id_profile: id, id_rol: 3 }, profile: { id } }
+  context.mock.method(globalThis, 'fetch', async () => Response.json(result, { status: 201 }))
+  assert.deepEqual(await register(payload), result)
 })
 
 test('register displays the rejected teacher verification code without reporting success', async (context) => {

@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { Alert, Button, Form, Spinner } from 'react-bootstrap'
+import { Link } from 'react-router-dom'
 import DashboardLayout from '../components/DashboardLayout'
 import { getEnrolledCourses, joinCourse } from '../services/courses'
 
@@ -36,7 +37,7 @@ function StudentCoursesPage() {
     setSuccess('')
     try {
       const course = await joinCourse(codigoAcceso)
-      setCourses(current => [course, ...current.filter(item => item.id !== course.id)])
+      setCourses(current => [course, ...current.filter(item => item._id !== course._id)])
       setCodigoAcceso('')
       setSuccess(`Te uniste a “${course.curso}” correctamente.`)
     } catch (error) {
@@ -76,7 +77,7 @@ function StudentCoursesPage() {
           </div>
           <div className="student-course-join-content">
             <h2 id="student-course-join-title">Unirme a un curso</h2>
-            <p>El código tiene 10 caracteres y no distingue entre mayúsculas y minúsculas.</p>
+            <p>Ingresá el código que te compartió tu docente. No distingue entre mayúsculas y minúsculas.</p>
             <Form onSubmit={handleJoin}>
               <Form.Group controlId="courseAccessCode">
                 <Form.Label>Código de acceso</Form.Label>
@@ -84,7 +85,7 @@ function StudentCoursesPage() {
                   <Form.Control
                     autoComplete="off"
                     autoCapitalize="characters"
-                    maxLength={10}
+                    maxLength={12}
                     minLength={10}
                     name="codigo_acceso"
                     onChange={event => {
@@ -92,7 +93,7 @@ function StudentCoursesPage() {
                       setFormError('')
                       setSuccess('')
                     }}
-                    pattern="[A-HJ-NP-Z2-9]{10}"
+                    pattern="[A-Fa-f0-9]{10,12}"
                     placeholder="Ejemplo: ABCDEF2345"
                     required
                     value={codigoAcceso}
@@ -140,14 +141,23 @@ function StudentCoursesPage() {
           {courses.length > 0 && (
             <div className="teacher-courses-grid">
               {courses.map(course => (
-                <article className="teacher-course-card" key={course.id}>
-                  <div className="teacher-course-top">
-                    <span className="teacher-module-icon"><i className="bi bi-collection" aria-hidden="true" /></span>
-                    <span className="teacher-course-subject">{course.materia}</span>
-                  </div>
-                  <h3>{course.curso}</h3>
-                  <p className="teacher-course-description">{course.descripcion || 'Sin descripción.'}</p>
-                </article>
+                <Link
+                  className="student-course-card-link"
+                  key={course._id}
+                  to={`/courses/${encodeURIComponent(course._id)}`}
+                >
+                  <article className="teacher-course-card">
+                    <div className="teacher-course-top">
+                      <span className="teacher-module-icon"><i className="bi bi-collection" aria-hidden="true" /></span>
+                      <span className="teacher-course-subject">{course.materia}</span>
+                    </div>
+                    <h3>{course.curso}</h3>
+                    <p className="teacher-course-description">{course.descripcion || 'Sin descripción.'}</p>
+                    <span className="student-course-open-link">
+                      Ver curso <i className="bi bi-arrow-right" aria-hidden="true" />
+                    </span>
+                  </article>
+                </Link>
               ))}
             </div>
           )}
