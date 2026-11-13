@@ -350,3 +350,40 @@ export async function deleteSectionPost(courseId, sectionId, postId) {
     { method: 'DELETE' },
   )
 }
+
+export async function uploadSectionPostAttachment(courseId, sectionId, postId, file) {
+  const formData = new FormData()
+  formData.append('archivo', file)
+  let response
+  try {
+    response = await fetch(
+      `/api/courses/${encodeURIComponent(courseId)}/sections/${encodeURIComponent(sectionId)}/posts/${encodeURIComponent(postId)}/attachments`,
+      {
+        method: 'POST',
+        credentials: 'include',
+        cache: 'no-store',
+        body: formData,
+      },
+    )
+  } catch (error) {
+    if (error.name === 'AbortError') throw error
+    throw new CourseError('No se pudo conectar con el servidor. Intentá nuevamente.', 0)
+  }
+  const data = await response.json().catch(() => ({}))
+  if (!response.ok) {
+    throw new CourseError(data.message || `No se pudo subir el archivo (HTTP ${response.status}).`, response.status)
+  }
+  if (!data.adjunto) throw new CourseError('El servidor devolvió una respuesta inválida.')
+  return data.adjunto
+}
+
+export async function deleteSectionPostAttachment(courseId, sectionId, postId, attachmentId) {
+  await requestSection(
+    `/api/courses/${encodeURIComponent(courseId)}/sections/${encodeURIComponent(sectionId)}/posts/${encodeURIComponent(postId)}/attachments/${encodeURIComponent(attachmentId)}`,
+    { method: 'DELETE' },
+  )
+}
+
+export function getSectionPostAttachmentDownloadUrl(courseId, sectionId, postId, attachmentId) {
+  return `/api/courses/${encodeURIComponent(courseId)}/sections/${encodeURIComponent(sectionId)}/posts/${encodeURIComponent(postId)}/attachments/${encodeURIComponent(attachmentId)}`
+}

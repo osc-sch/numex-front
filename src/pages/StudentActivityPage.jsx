@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { Alert, Button, Form, Modal, ProgressBar, Spinner } from 'react-bootstrap'
 import { Link, useParams } from 'react-router-dom'
 import DashboardLayout from '../components/DashboardLayout'
+import MathContent from '../components/MathContent'
 import {
   abandonActivityAttempt,
   answerActivityAttempt,
@@ -221,8 +222,8 @@ function ActivityResolution({ courseId, sectionId, activityId }) {
           <>
             <header className="student-activity-heading">
               <p className="teacher-eyebrow"><i className="bi bi-clipboard-check" aria-hidden="true" /> Actividad</p>
-              <h1 id="student-activity-title">{activity.titulo}</h1>
-              {activity.descripcion && <p>{activity.descripcion}</p>}
+              <h1 id="student-activity-title"><MathContent content={activity.titulo} inline /></h1>
+              {activity.descripcion && <MathContent content={activity.descripcion} />}
             </header>
 
             {attemptError && <Alert variant="danger" role="alert">{attemptError}</Alert>}
@@ -330,14 +331,16 @@ function ActivityResolution({ courseId, sectionId, activityId }) {
                         ) : (
                           <>
                             <fieldset disabled={isSubmitting || Boolean(feedback)}>
-                              <legend className="student-activity-question-prompt">{currentQuestion.enunciado}</legend>
+                              <legend className="student-activity-question-prompt">
+                                <MathContent content={currentQuestion.enunciado} inline />
+                              </legend>
                               <div className="student-activity-options">
                                 {currentQuestion.opciones.map(option => (
                                   <Form.Check
                                     key={option._id}
                                     checked={selectedOption === option._id}
                                     id={`attempt-${currentQuestion.ejercicioId}-${option._id}`}
-                                    label={option.texto}
+                                    label={<MathContent content={option.texto} inline />}
                                     name={`attempt-${currentQuestion.ejercicioId}`}
                                     onClick={() => {
                                       if (isSubmitting || feedback) return
@@ -370,7 +373,7 @@ function ActivityResolution({ courseId, sectionId, activityId }) {
                                         ? 'Revisemos la idea'
                                         : 'Una pista para ayudarte'}
                                   </h2>
-                                  <p>{feedback.mensaje}</p>
+                                  <MathContent content={feedback.mensaje} />
                                 </div>
                                 <Button type="button" onClick={continueAfterFeedback}>
                                   {attempt.estado === 'completado' ? 'Ver resultado' : 'Continuar'}

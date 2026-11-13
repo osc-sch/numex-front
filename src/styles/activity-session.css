@@ -305,7 +305,7 @@
   font-size: 0.9rem;
 }
 
-.question-feedback p {
+.question-feedback .math-content {
   margin: 0;
   font-size: 0.88rem;
   line-height: 1.55;

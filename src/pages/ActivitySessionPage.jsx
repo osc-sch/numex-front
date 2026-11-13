@@ -12,6 +12,7 @@ import { useNavigate } from 'react-router-dom'
 
 import { useAuth } from '../auth/authContext'
 import DashboardLayout from '../components/DashboardLayout'
+import MathContent from '../components/MathContent'
 import { submitTestCorrection } from '../services/testCorrection'
 import '../styles/activity-session.css'
 
@@ -366,7 +367,7 @@ function ActivitySessionPage({
               {config.eyebrow}
             </p>
 
-            <h1>{sessionTitle}</h1>
+            <h1><MathContent content={sessionTitle} inline /></h1>
 
             <p className="session-description">
               {config.description}
@@ -432,7 +433,7 @@ function ActivitySessionPage({
                 </div>
 
                 <h2 className="question-statement">
-                  {currentQuestion.enunciado}
+                  <MathContent content={currentQuestion.enunciado} inline />
                 </h2>
 
                 <div className="answer-options">
@@ -454,7 +455,7 @@ function ActivitySessionPage({
                         </span>
 
                         <span className="answer-text">
-                          {option.texto}
+                          <MathContent content={option.texto} inline />
                         </span>
 
                         {selectedAnswer === optionKey &&
@@ -508,9 +509,7 @@ function ActivitySessionPage({
                             : 'Revisemos esta respuesta'}
                         </strong>
 
-                        <p>
-                          {selectedOption.feedback}
-                        </p>
+                        <MathContent content={selectedOption.feedback} />
                       </div>
                     </div>
                   )}

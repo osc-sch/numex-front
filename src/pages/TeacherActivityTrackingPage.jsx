@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { Alert, Button, Form, Modal, Spinner, Table } from 'react-bootstrap'
 import { Link, useParams } from 'react-router-dom'
 import DashboardLayout from '../components/DashboardLayout'
+import MathContent from '../components/MathContent'
 import {
   getActivity,
   getActivityAttemptEvents,
@@ -232,7 +233,7 @@ function ActivityTracking({ courseId, sectionId, activityId }) {
             <header className="activity-tracking-heading">
               <div>
                 <p className="teacher-eyebrow">{course.curso} · {section.nombre} · Seguimiento</p>
-                <h1 id="activity-tracking-title">{activity.titulo}</h1>
+                <h1 id="activity-tracking-title"><MathContent content={activity.titulo} inline /></h1>
                 <p>Revisá el avance de los participantes y sus interacciones.</p>
               </div>
               <Link
@@ -324,7 +325,7 @@ function ActivityTracking({ courseId, sectionId, activityId }) {
                             {question.numeroVersion > 1 ? `Versión ${question.numeroVersion} · ` : ''}
                             Pregunta {index + 1}
                           </span>
-                          <h3>{question.pregunta}</h3>
+                          <h3><MathContent content={question.pregunta} inline /></h3>
                         </div>
                         <dl>
                           <div><dt>Respuestas incorrectas</dt><dd>{question.incorrectas ?? 0}</dd></div>
@@ -384,7 +385,7 @@ function ActivityTracking({ courseId, sectionId, activityId }) {
                   </Form.Group>
                   {selectedDistributionQuestion && (
                     <div className="activity-option-distribution">
-                      <h3>{selectedDistributionQuestion.pregunta}</h3>
+                      <h3><MathContent content={selectedDistributionQuestion.pregunta} inline /></h3>
                       <p>
                         Participantes que respondieron: {selectedDistributionQuestion.alumnosUnicos ?? 0}.
                         {' '}Selecciones totales: {selectedOptionCount}.
@@ -401,7 +402,10 @@ function ActivityTracking({ courseId, sectionId, activityId }) {
                             return (
                               <div className="activity-option-bar-row" key={String(option.opcionId)}>
                                 <div className="activity-option-bar-label">
-                                  <span>{option.texto}{option.correcta ? ' · Correcta' : ''}</span>
+                                  <span>
+                                    <MathContent content={option.texto} inline />
+                                    {option.correcta ? ' · Correcta' : ''}
+                                  </span>
                                   <strong>{selections} {selections === 1 ? 'selección' : 'selecciones'}</strong>
                                 </div>
                                 <div
@@ -567,14 +571,19 @@ function ActivityTracking({ courseId, sectionId, activityId }) {
                         <strong>{eventLabels[event.tipo] ?? 'Interacción registrada'}</strong>
                         {event.ejercicio && (
                           <p>
-                            {matchedQuestion
-                              ? `Pregunta: ${matchedQuestion.pregunta}`
-                              : 'Pregunta de una versión anterior de la actividad'}
+                            {matchedQuestion ? (
+                              <>Pregunta: <MathContent content={matchedQuestion.pregunta} inline /></>
+                            ) : 'Pregunta de una versión anterior de la actividad'}
                           </p>
                         )}
-                        {selectedOption && <p>Opción elegida: {selectedOption.texto}</p>}
+                        {selectedOption && (
+                        <p>Opción elegida: <MathContent content={selectedOption.texto} inline /></p>
+                        )}
                         {event.respuestaApi?.retroalimentacion?.mensaje && (
-                          <p>{event.respuestaApi.retroalimentacion.mensaje}</p>
+                        <MathContent
+                          className="activity-history-feedback"
+                          content={event.respuestaApi.retroalimentacion.mensaje}
+                        />
                         )}
                         {event.numeroIntentoPregunta && <p>Intento {event.numeroIntentoPregunta} de esta pregunta</p>}
                         <time dateTime={event.fecha}>{event.fecha ? new Date(event.fecha).toLocaleString() : 'Fecha no disponible'}</time>

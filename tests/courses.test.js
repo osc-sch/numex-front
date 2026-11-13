@@ -7,6 +7,7 @@ import {
   deleteCourse,
   deleteCourseSection,
   deleteSectionPost,
+  deleteSectionPostAttachment,
   getCourse,
   getCourseSections,
   getCourses,
@@ -14,10 +15,12 @@ import {
   getEnrolledCourses,
   getSectionPosts,
   getSectionPost,
+  getSectionPostAttachmentDownloadUrl,
   joinCourse,
   updateCourse,
   updateCourseSection,
   updateSectionPost,
+  uploadSectionPostAttachment,
 } from '../src/services/courses.js'
 
 const course = {
@@ -228,6 +231,38 @@ test('a student can fetch a single section publication through the detail route'
   assert.equal(options.cache, 'no-store')
 })
 
+test('material Markdown and LaTeX survive API JSON submission and retrieval unchanged', async context => {
+  const contenido = String.raw`# Fracciones
+
+La fracción $\frac{a}{b}$ equivale a $$\frac{a}{b}$$.`
+  const post = {
+    _id: 'formula-material',
+    tipo: 'material',
+    titulo: 'Fracciones',
+    descripcion: String.raw`Simplificá $\frac{2}{4}$.`,
+    contenido,
+  }
+  const postInput = {
+    tipo: post.tipo,
+    titulo: post.titulo,
+    descripcion: post.descripcion,
+    contenido: post.contenido,
+  }
+  const fetchMock = context.mock.method(globalThis, 'fetch', async (_url, options) => (
+    options.method === 'POST'
+      ? Response.json({ publicacion: post }, { status: 201 })
+      : Response.json({ publicacion: post })
+  ))
+
+  const created = await createSectionPost(course._id, 'section-1', postInput)
+  assert.equal(JSON.parse(fetchMock.mock.calls[0].arguments[1].body).contenido, contenido)
+  assert.equal(created.contenido, contenido)
+
+  const loaded = await getSectionPost(course._id, 'section-1', post._id)
+  assert.equal(loaded.contenido, contenido)
+  assert.equal(loaded.descripcion, post.descripcion)
+})
+
 test('course requests report validation, permissions and network failures', async context => {
   const fetchMock = context.mock.method(globalThis, 'fetch', async () => Response.json({
     errors: [{ msg: 'Ingresá la materia' }, { msg: 'Ingresá la materia' }],
@@ -253,4 +288,33 @@ test('leaving the courses page cancels the pending list request', async context 
   const request = getCourses({ signal: controller.signal })
   controller.abort()
   await assert.rejects(request, { name: 'AbortError' })
+})
+
+test('publication attachments upload as multipart and return the saved file metadata', async context => {
+  const attachment = { _id: 'attachment-1', nombre: 'guia.pdf', tipoMime: 'application/pdf', tamano: 1200 }
+  const fetchMock = context.mock.method(globalThis, 'fetch', async () => Response.json({ adjunto: attachment }, { status: 201 }))
+  const file = new Blob(['%PDF-1.7'], { type: 'application/pdf' })
+  assert.deepEqual(
+    await uploadSectionPostAttachment('course 1', 'section 2', 'post 3', file),
+    attachment,
+  )
+
+  const [url, options] = fetchMock.mock.calls[0].arguments
+  assert.equal(url, '/api/courses/course%201/sections/section%202/posts/post%203/attachments')
+  assert.equal(options.method, 'POST')
+  assert.equal(options.credentials, 'include')
+  assert.equal(options.body instanceof FormData, true)
+  assert.equal(options.body.get('archivo').type, 'application/pdf')
+  assert.equal(options.headers, undefined)
+})
+
+test('attachment removal uses the authenticated endpoint and download URL', async context => {
+  const fetchMock = context.mock.method(globalThis, 'fetch', async () => Response.json({ message: 'Archivo eliminado' }))
+  await deleteSectionPostAttachment('course-1', 'section-1', 'post-1', 'attachment-1')
+  assert.deepEqual(fetchMock.mock.calls[0].arguments[0], '/api/courses/course-1/sections/section-1/posts/post-1/attachments/attachment-1')
+  assert.equal(fetchMock.mock.calls[0].arguments[1].method, 'DELETE')
+  assert.equal(
+    getSectionPostAttachmentDownloadUrl('course-1', 'section-1', 'post-1', 'attachment-1'),
+    '/api/courses/course-1/sections/section-1/posts/post-1/attachments/attachment-1',
+  )
 })

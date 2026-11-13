@@ -76,9 +76,14 @@ test('session recovery preserves either boolean diagnostic state from the backen
   }
 })
 
-test('session recovery rejects a missing or non-boolean diagnostic state', async (context) => {
+test('session recovery accepts a missing diagnostic state and rejects only invalid non-boolean values', async (context) => {
   const fetchMock = context.mock.method(globalThis, 'fetch', async () => Response.json(session))
-  for (const value of [undefined, null, 0, 1, 'false', 'true']) {
+  const sessionWithoutDiagnostic = { ...session, profile: { ...session.profile } }
+  delete sessionWithoutDiagnostic.profile.test_diagnostic_completed
+  fetchMock.mock.mockImplementation(async () => Response.json(sessionWithoutDiagnostic))
+  assert.deepEqual(await getSession(), sessionWithoutDiagnostic)
+
+  for (const value of [null, 0, 1, 'false', 'true']) {
     fetchMock.mock.mockImplementation(async () => Response.json({
       ...session, profile: { ...session.profile, test_diagnostic_completed: value },
     }))

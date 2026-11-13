@@ -46,26 +46,41 @@ export function getGeneratedActivities(data) {
   }
 }
 
+export function sanitizeTextField(value) {
+  if (typeof value !== 'string') return ''
+
+  let text = value.replace(/\r/g, '').replace(/\u00a0/g, ' ').trim()
+  text = text
+    .replace(/(?:clientId|optionId|exerciseId|questionId|answerId|_id)\s*[:=]\s*[A-Za-z0-9_-]+/gi, '')
+    .replace(/\b(?:new|option|client|exercise|question|answer)-[A-Za-z0-9_-]+\b/gi, '')
+    .replace(/\b[A-Za-z]+Id(?:[A-Za-z0-9_-]+)?\b/gi, '')
+    .replace(/\b[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}\b/g, '')
+    .replace(/\b[0-9a-fA-F]{24,}\b/g, '')
+    .trim()
+
+  return text
+}
+
 export function toActivityDraft(generated, createId) {
   return {
-    titulo: generated.titulo,
-    descripcion: typeof generated.descripcion === 'string' ? generated.descripcion : '',
-    ejercicios: generated.ejercicios.map(exercise => {
+    titulo: sanitizeTextField(generated?.titulo),
+    descripcion: sanitizeTextField(generated?.descripcion),
+    ejercicios: (generated?.ejercicios ?? []).map(exercise => {
       const opciones = Array.isArray(exercise?.opciones) ? exercise.opciones : []
       const correctIndex = Number.isInteger(exercise?.indiceCorrecta)
         ? exercise.indiceCorrecta
         : -1
       const optionDrafts = opciones.map(option => ({
         clientId: createId(),
-        texto: typeof option?.texto === 'string' ? option.texto : '',
-        pista: typeof option?.pista === 'string' ? option.pista : '',
-        explicacionError: typeof option?.explicacionError === 'string' ? option.explicacionError : '',
+        texto: sanitizeTextField(option?.texto),
+        pista: sanitizeTextField(option?.pista),
+        explicacionError: sanitizeTextField(option?.explicacionError),
       }))
       return {
         clientId: createId(),
         tipo: 'opcion_unica',
-        enunciado: typeof exercise?.enunciado === 'string' ? exercise.enunciado : '',
-        explicacionGeneral: typeof exercise?.explicacionGeneral === 'string' ? exercise.explicacionGeneral : '',
+        enunciado: sanitizeTextField(exercise?.enunciado),
+        explicacionGeneral: sanitizeTextField(exercise?.explicacionGeneral),
         opciones: optionDrafts,
         correctOptionId: optionDrafts[correctIndex]?.clientId ?? null,
       }

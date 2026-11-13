@@ -1,9 +1,10 @@
-import { useEffect, useRef, useState } from 'react'
-import { Alert, Button, Form, Modal, Spinner } from 'react-bootstrap'
-import { Link, useParams } from 'react-router-dom'
+import { useEffect, useState } from 'react'
+import { Alert, Button, Modal, Spinner } from 'react-bootstrap'
+import { Link, useLocation, useParams } from 'react-router-dom'
 import DashboardLayout from '../components/DashboardLayout'
+import MathContent from '../components/MathContent'
+import PublicationContent from '../components/PublicationContent'
 import {
-  createSectionPost,
   deleteSectionPost,
   getCourse,
   getCourseSections,
@@ -11,38 +12,23 @@ import {
   updateSectionPost,
 } from '../services/courses'
 
-const emptyDraft = {
-  tipo: 'material',
-  titulo: '',
-  descripcion: '',
-  contenido: '',
-  url: '',
-  visible: true,
-}
-
 function TeacherSectionPostsPage() {
   const { courseId, sectionId } = useParams()
   return <SectionPostsPage key={`${courseId}:${sectionId}`} courseId={courseId} sectionId={sectionId} />
 }
 
 function SectionPostsPage({ courseId, sectionId }) {
+  const location = useLocation()
   const [course, setCourse] = useState(null)
   const [section, setSection] = useState(null)
   const [posts, setPosts] = useState([])
   const [isLoading, setIsLoading] = useState(true)
   const [loadError, setLoadError] = useState('')
   const [reloadVersion, setReloadVersion] = useState(0)
-  const [showForm, setShowForm] = useState(false)
-  const [editingPost, setEditingPost] = useState(null)
-  const [draft, setDraft] = useState(emptyDraft)
-  const [formError, setFormError] = useState('')
-  const [isSubmitting, setIsSubmitting] = useState(false)
   const [actionError, setActionError] = useState('')
-  const [success, setSuccess] = useState('')
+  const [success, setSuccess] = useState(location.state?.notice ?? '')
   const [deletingPost, setDeletingPost] = useState(null)
   const [isDeleting, setIsDeleting] = useState(false)
-  const submitting = useRef(false)
-
   useEffect(() => {
     const controller = new AbortController()
     Promise.all([
@@ -71,63 +57,6 @@ function SectionPostsPage({ courseId, sectionId }) {
     setReloadVersion(version => version + 1)
   }
 
-  const openCreateForm = () => {
-    setEditingPost(null)
-    setDraft(emptyDraft)
-    setFormError('')
-    setShowForm(true)
-  }
-
-  const openEditForm = post => {
-    setEditingPost(post)
-    setDraft({
-      tipo: post.tipo,
-      titulo: post.titulo,
-      descripcion: post.descripcion ?? '',
-      contenido: post.contenido ?? '',
-      url: post.url ?? '',
-      visible: post.visible,
-    })
-    setFormError('')
-    setShowForm(true)
-  }
-
-  const handleSave = async event => {
-    event.preventDefault()
-    if (submitting.current) return
-    submitting.current = true
-    setIsSubmitting(true)
-    setFormError('')
-    setActionError('')
-    try {
-      const common = {
-        titulo: draft.titulo.trim(),
-        descripcion: draft.descripcion.trim(),
-        contenido: draft.contenido,
-        url: draft.url.trim(),
-      }
-      const post = editingPost
-        ? await updateSectionPost(courseId, sectionId, editingPost._id, {
-          ...common,
-          visible: draft.visible,
-        })
-        : await createSectionPost(courseId, sectionId, {
-          tipo: draft.tipo,
-          ...common,
-        })
-      setPosts(current => editingPost
-        ? current.map(item => item._id === post._id ? post : item)
-        : [...current, post].sort((a, b) => a.orden - b.orden || a._id.localeCompare(b._id)))
-      setSuccess(`La publicación “${post.titulo}” se ${editingPost ? 'actualizó' : 'creó'} correctamente.`)
-      setShowForm(false)
-    } catch (error) {
-      setFormError(error.message || 'No se pudo guardar la publicación.')
-    } finally {
-      submitting.current = false
-      setIsSubmitting(false)
-    }
-  }
-
   const toggleVisibility = async post => {
     setActionError('')
     try {
@@ -153,11 +82,6 @@ function SectionPostsPage({ courseId, sectionId }) {
     } finally {
       setIsDeleting(false)
     }
-  }
-
-  const updateDraft = event => {
-    const { name, value, type, checked } = event.target
-    setDraft(current => ({ ...current, [name]: type === 'checkbox' ? checked : value }))
   }
 
   return (
@@ -195,7 +119,10 @@ function SectionPostsPage({ courseId, sectionId }) {
                 >
                   <i className="bi bi-clipboard-check" aria-hidden="true" /> Actividades
                 </Button>
-                <Button onClick={openCreateForm}>
+                <Button
+                  as={Link}
+                  to={`/teacher/courses/${encodeURIComponent(courseId)}/sections/${encodeURIComponent(sectionId)}/posts/new`}
+                >
                   <i className="bi bi-plus-lg" aria-hidden="true" /> Nueva publicación
                 </Button>
               </div>
@@ -211,7 +138,12 @@ function SectionPostsPage({ courseId, sectionId }) {
                 </div>
                 <h2>Esta sección todavía no tiene publicaciones</h2>
                 <p>Compartí materiales o actividades con los alumnos del curso.</p>
-                <Button onClick={openCreateForm}>Crear primera publicación</Button>
+                <Button
+                  as={Link}
+                  to={`/teacher/courses/${encodeURIComponent(courseId)}/sections/${encodeURIComponent(sectionId)}/posts/new`}
+                >
+                  Crear primera publicación
+                </Button>
               </div>
             ) : (
               <div className="teacher-section-posts-list">
@@ -227,12 +159,27 @@ function SectionPostsPage({ courseId, sectionId }) {
                           {post.visible ? 'Visible' : 'Oculta'}
                         </span>
                       </div>
-                      <h2>{post.titulo}</h2>
-                      {post.descripcion && <p className="student-section-post-description">{post.descripcion}</p>}
-                      {post.contenido && <div className="student-section-post-content">{post.contenido}</div>}
+                      <h2><MathContent content={post.titulo} inline /></h2>
+                      {post.descripcion && (
+                        <div className="student-section-post-description">
+                          <MathContent content={post.descripcion} />
+                        </div>
+                      )}
+                      {post.contenido && (
+                        <PublicationContent content={post.contenido} className="student-section-post-content" />
+                      )}
                       {post.url && <a href={post.url} target="_blank" rel="noreferrer">Abrir recurso</a>}
                       <div className="d-flex flex-wrap gap-2 mt-3">
-                        <Button variant="outline-primary" size="sm" onClick={() => openEditForm(post)}>Editar</Button>
+                        {post.tipo === 'material' && (
+                          <Button
+                            as={Link}
+                            to={`/teacher/courses/${encodeURIComponent(courseId)}/sections/${encodeURIComponent(sectionId)}/posts/${encodeURIComponent(post._id)}/edit`}
+                            variant="outline-primary"
+                            size="sm"
+                          >
+                            Editar
+                          </Button>
+                        )}
                         <Button variant="outline-secondary" size="sm" onClick={() => toggleVisibility(post)}>
                           {post.visible ? 'Ocultar a alumnos' : 'Mostrar a alumnos'}
                         </Button>
@@ -245,91 +192,6 @@ function SectionPostsPage({ courseId, sectionId }) {
             )}
           </>
         )}
-
-        <Modal show={showForm} onHide={() => !isSubmitting && setShowForm(false)} size="lg" centered>
-          <Form onSubmit={handleSave}>
-            <Modal.Header closeButton={!isSubmitting}>
-              <Modal.Title>{editingPost ? 'Editar publicación' : 'Nueva publicación'}</Modal.Title>
-            </Modal.Header>
-            <Modal.Body>
-              {formError && <Alert variant="danger" role="alert">{formError}</Alert>}
-              {!editingPost && (
-                <Form.Group className="mb-3" controlId="postType">
-                  <Form.Label>Tipo</Form.Label>
-                  <Form.Select name="tipo" onChange={updateDraft} value={draft.tipo}>
-                    <option value="material">Material</option>
-                    <option value="actividad">Actividad</option>
-                  </Form.Select>
-                </Form.Group>
-              )}
-              <Form.Group className="mb-3" controlId="postTitle">
-                <Form.Label>Título</Form.Label>
-                <Form.Control
-                  autoFocus
-                  maxLength={150}
-                  name="titulo"
-                  onChange={updateDraft}
-                  required
-                  value={draft.titulo}
-                />
-              </Form.Group>
-              <Form.Group className="mb-3" controlId="postDescription">
-                <Form.Label>Descripción</Form.Label>
-                <Form.Control
-                  as="textarea"
-                  maxLength={5000}
-                  name="descripcion"
-                  onChange={updateDraft}
-                  rows={2}
-                  value={draft.descripcion}
-                />
-              </Form.Group>
-              <Form.Group className="mb-3" controlId="postContent">
-                <Form.Label>{draft.tipo === 'actividad' ? 'Consigna' : 'Contenido'}</Form.Label>
-                <Form.Control
-                  as="textarea"
-                  maxLength={50000}
-                  name="contenido"
-                  onChange={updateDraft}
-                  rows={8}
-                  value={draft.contenido}
-                />
-                <Form.Text>Podés usar texto o Markdown; no se admite HTML.</Form.Text>
-              </Form.Group>
-              <Form.Group className="mb-3" controlId="postUrl">
-                <Form.Label>Enlace a un recurso (opcional)</Form.Label>
-                <Form.Control
-                  maxLength={2048}
-                  name="url"
-                  onChange={updateDraft}
-                  placeholder="https://..."
-                  type="url"
-                  value={draft.url}
-                />
-              </Form.Group>
-              {editingPost && (
-                <Form.Check
-                  checked={draft.visible}
-                  id="postVisible"
-                  label="Visible para los alumnos"
-                  name="visible"
-                  onChange={updateDraft}
-                  type="switch"
-                />
-              )}
-            </Modal.Body>
-            <Modal.Footer>
-              <Button variant="outline-secondary" onClick={() => setShowForm(false)} disabled={isSubmitting}>
-                Cancelar
-              </Button>
-              <Button type="submit" disabled={isSubmitting}>
-                {isSubmitting
-                  ? <><Spinner size="sm" animation="border" aria-hidden="true" /> Guardando…</>
-                  : 'Guardar publicación'}
-              </Button>
-            </Modal.Footer>
-          </Form>
-        </Modal>
 
         <Modal show={Boolean(deletingPost)} onHide={() => !isDeleting && setDeletingPost(null)} centered>
           <Modal.Header closeButton={!isDeleting}>

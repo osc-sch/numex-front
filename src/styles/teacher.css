@@ -538,33 +538,6 @@
   overflow-wrap: anywhere;
 }
 
-.student-course-join {
-  display: grid;
-  grid-template-columns: auto minmax(0, 1fr);
-  align-items: start;
-  gap: 18px;
-  padding: 24px;
-  border: 1px solid #dfe7ed;
-  border-radius: 18px;
-  background: #fffefd;
-}
-
-.student-course-join-icon {
-  display: grid;
-  width: 46px;
-  height: 46px;
-  place-items: center;
-  border-radius: 13px;
-  background: #eaf7f0;
-  color: #217a61;
-  font-size: 1.15rem;
-}
-
-.student-course-join-content {
-  min-width: 0;
-}
-
-.student-course-join h2,
 .student-enrolled-heading h2 {
   margin: 0;
   color: #203448;
@@ -572,20 +545,14 @@
   font-weight: 750;
 }
 
-.student-course-join-content > p {
-  margin: 7px 0 18px;
+.student-course-join-intro {
+  margin: 0 0 18px;
   color: #64748b;
   font-size: 0.85rem;
   line-height: 1.6;
 }
 
-.student-course-join-controls {
-  display: flex;
-  gap: 10px;
-  max-width: 600px;
-}
-
-.student-course-join-controls .form-control {
+.student-course-join-modal .form-control {
   min-width: 0;
   font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
   letter-spacing: 0.08em;
@@ -612,7 +579,7 @@
   font-weight: 700;
 }
 
-.student-course-join + section .teacher-course-card h3 {
+.student-course-card-link .teacher-course-card h3 {
   margin: 0 0 12px;
   color: #203448;
   font-size: 1.25rem;
@@ -654,14 +621,28 @@
   margin-bottom: 12px;
 }
 
-.student-course-detail-card {
+.student-course-overview {
   display: grid;
-  grid-template-columns: auto minmax(0, 1fr);
   gap: 18px;
   padding: 26px;
   border: 1px solid #dfe7ed;
   border-radius: 18px;
   background: #fffefd;
+}
+
+.student-course-overview-header {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.student-course-overview-body {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 18px;
+  padding-top: 12px;
+  border-top: 1px solid #ebf0f4;
 }
 
 .student-course-detail-icon {
@@ -675,16 +656,16 @@
   font-size: 1.2rem;
 }
 
-.student-course-detail-card h2,
-.student-course-teacher h2 {
+.student-course-overview h2,
+.student-course-overview-teacher h2 {
   margin: 0 0 10px;
   color: #203448;
   font-size: 1.05rem;
   font-weight: 750;
 }
 
-.student-course-detail-card p,
-.student-course-teacher p {
+.student-course-overview p,
+.student-course-overview-teacher p {
   margin: 0;
   color: #617080;
   line-height: 1.7;
@@ -692,12 +673,9 @@
   overflow-wrap: anywhere;
 }
 
-.student-course-teacher {
-  margin-top: 20px;
-  padding: 22px 26px;
-  border: 1px solid #dfe7ed;
-  border-radius: 18px;
-  background: #fffefd;
+.student-course-overview-teacher {
+  padding-top: 12px;
+  border-top: 1px solid #ebf0f4;
 }
 
 .student-course-sections {
@@ -777,10 +755,6 @@
 
 .student-section-content-panel {
   min-width: 0;
-}
-
-.student-course-section-description {
-  margin: 10px 0 0 !important;
 }
 
 .student-course-section p,
@@ -930,8 +904,9 @@
 }
 
 .student-post-detail {
-  max-width: 900px;
-  margin: 0 auto;
+  width: 100%;
+  min-width: 0;
+  margin: 0;
   padding: clamp(24px, 5vw, 48px);
   border: 1px solid #dfe7ed;
   border-radius: 22px;
@@ -957,10 +932,11 @@
 }
 
 .student-post-detail h1 {
-  margin: 12px 0 8px;
+  margin: 12px 0 10px;
   color: #203448;
   font-size: clamp(1.7rem, 4vw, 2.4rem);
   font-weight: 800;
+  line-height: 1.2;
   overflow-wrap: anywhere;
 }
 
@@ -971,12 +947,14 @@
 }
 
 .student-post-detail-description,
-.student-post-detail-content {
+.student-post-detail-content,
+.student-post-attachments {
   margin-top: 24px;
 }
 
 .student-post-detail-description h2,
-.student-post-detail-content h2 {
+.student-post-detail-content h2,
+.student-post-attachments h2 {
   margin: 0 0 12px;
   color: #203448;
   font-size: 1.05rem;
@@ -991,6 +969,10 @@
   line-height: 1.8;
   white-space: pre-wrap;
   overflow-wrap: anywhere;
+}
+
+.student-post-detail-content .math-content > * + * {
+  margin-top: 1rem;
 }
 
 .student-post-resource-link {
@@ -1014,6 +996,65 @@
 
 .student-post-detail .teacher-back-link {
   margin-top: 32px;
+}
+
+.student-post-attachments {
+  padding: 18px;
+  border: 1px solid #e3eaf0;
+  border-radius: 16px;
+  background: #f7fafc;
+}
+
+.student-post-detail .material-attachment-list {
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 220px), 1fr));
+  gap: 12px;
+}
+
+.student-post-detail .material-attachment-list li {
+  min-height: 104px;
+  align-items: flex-start;
+  flex-direction: column;
+  flex-wrap: nowrap;
+  gap: 12px;
+  padding: 14px;
+  border-color: #e1e8ef;
+  border-radius: 13px;
+  box-shadow: 0 3px 10px #233d5e08;
+  transition: border-color 160ms ease, box-shadow 160ms ease, transform 160ms ease;
+}
+
+.student-post-detail .material-attachment-list li:hover {
+  transform: translateY(-2px);
+  border-color: #b7d5cb;
+  box-shadow: 0 8px 18px #233d5e12;
+}
+
+.student-post-detail .material-attachment-list li > a {
+  width: 100%;
+  color: #1767c2;
+  text-decoration: none;
+}
+
+.student-post-detail .material-attachment-list li > a > i {
+  display: grid;
+  width: 34px;
+  height: 34px;
+  flex: 0 0 auto;
+  place-items: center;
+  border-radius: 10px;
+  background: #edf5ff;
+  color: #2866a8;
+}
+
+.student-post-detail .material-attachment-list li > a:hover,
+.student-post-detail .material-attachment-list li > a:focus-visible {
+  text-decoration: underline;
+}
+
+.student-post-detail .material-attachment-list li > span:not(:first-child) {
+  margin: auto 0 0 41px;
+  color: #657587;
+  font-size: 0.78rem;
 }
 
 .student-section-post,
@@ -1256,8 +1297,6 @@
   .teacher-role-badge { padding: 6px 9px; font-size: 0.7rem; }
   .teacher-courses-grid { grid-template-columns: minmax(0, 1fr); }
   .teacher-course-card { padding: 20px; }
-  .student-course-join { grid-template-columns: minmax(0, 1fr); padding: 20px; }
-  .student-course-join-controls { flex-direction: column; }
 }
 
 .teacher-section-header-actions {
@@ -1320,7 +1359,8 @@
   overflow-wrap: anywhere;
 }
 
-.teacher-activity-card-main > p {
+.teacher-activity-card-main > p,
+.teacher-activity-card-main > .math-content {
   margin: 5px 0 8px;
   color: #64748b;
   font-size: 0.85rem;
@@ -1773,6 +1813,11 @@
   white-space: pre-wrap;
 }
 
+.student-activity-heading > .math-content:last-child {
+  max-width: 760px;
+  margin-top: 10px;
+}
+
 .student-activity-questions {
   display: grid;
   gap: 16px;
@@ -2082,7 +2127,7 @@
   color: #80530b;
 }
 
-.activity-feedback-panel p {
+.activity-feedback-panel > div > .math-content {
   margin: 6px 0 0;
   color: #365f4d;
   font-size: 0.9rem;
@@ -2090,7 +2135,7 @@
   white-space: pre-wrap;
 }
 
-.activity-feedback-panel.is-hint p {
+.activity-feedback-panel.is-hint > div > .math-content {
   color: #644f2a;
 }
 
@@ -2520,6 +2565,14 @@
   white-space: pre-wrap;
 }
 
+.activity-history-timeline .activity-history-feedback {
+  margin-top: 5px;
+  color: #526273;
+  font-size: 0.8rem;
+  line-height: 1.5;
+  white-space: pre-wrap;
+}
+
 .activity-history-timeline time {
   display: inline-block;
   margin-top: 7px;
@@ -2543,4 +2596,352 @@
 
 @media (max-width: 600px) {
   .activity-option-feedback { grid-column: 2; }
+}
+
+.material-editor-back {
+  border: 0;
+  padding: 0;
+  background: transparent;
+  cursor: pointer;
+  font: inherit;
+}
+
+.material-editor-heading {
+  align-items: flex-start;
+  gap: 24px;
+}
+
+.material-editor-heading-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.material-editor-unsaved {
+  margin: -12px 0 16px;
+  color: #875b00;
+  font-size: 0.9rem;
+  font-weight: 650;
+}
+
+.material-editor-metadata {
+  display: grid;
+  gap: 16px;
+  margin-bottom: 20px;
+  padding: 20px;
+  border: 1px solid #e3eaf0;
+  border-radius: 14px;
+  background: #fff;
+}
+
+.material-editor-shell {
+  overflow: hidden;
+  border: 1px solid #d5dee7;
+  border-radius: 14px;
+  background: #fff;
+}
+
+.material-editor-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  padding: 12px;
+  border-bottom: 1px solid #e3eaf0;
+  background: #f8fafc;
+}
+
+.material-toolbar-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  padding-right: 10px;
+  border-right: 1px solid #d5dee7;
+}
+
+.material-toolbar-group:last-child {
+  padding-right: 0;
+  border-right: 0;
+}
+
+.material-toolbar-group .btn {
+  display: inline-flex;
+  min-height: 38px;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+.material-editor-content .tiptap {
+  min-height: 420px;
+  padding: clamp(18px, 4vw, 40px);
+  color: #34475b;
+  font-size: 1rem;
+  line-height: 1.8;
+  outline: none;
+  overflow-wrap: anywhere;
+}
+
+.material-editor-content .tiptap > :first-child,
+.publication-document .tiptap > :first-child {
+  margin-top: 0;
+}
+
+.material-editor-content .tiptap > :last-child,
+.publication-document .tiptap > :last-child {
+  margin-bottom: 0;
+}
+
+.material-editor-content .tiptap h2,
+.publication-document .tiptap h2 {
+  margin: 1.8em 0 0.65em;
+  color: #203448;
+  font-size: 1.6rem;
+  font-weight: 750;
+  line-height: 1.3;
+}
+
+.material-editor-content .tiptap h3,
+.publication-document .tiptap h3 {
+  margin: 1.5em 0 0.6em;
+  color: #203448;
+  font-size: 1.25rem;
+  font-weight: 700;
+  line-height: 1.35;
+}
+
+.material-editor-content .tiptap p,
+.publication-document .tiptap p {
+  margin: 0.75em 0;
+}
+
+.material-editor-content .tiptap ul,
+.material-editor-content .tiptap ol,
+.publication-document .tiptap ul,
+.publication-document .tiptap ol {
+  padding-left: 1.7em;
+}
+
+.material-editor-content .tiptap a,
+.publication-document .tiptap a {
+  color: #17664f;
+  text-decoration: underline;
+  overflow-wrap: anywhere;
+}
+
+.material-editor-content .tiptap .tiptap-mathematics-render,
+.publication-document .tiptap .tiptap-mathematics-render {
+  display: inline-block;
+  max-width: 100%;
+  overflow-x: auto;
+  overflow-y: hidden;
+  vertical-align: middle;
+}
+
+.material-editor-content .tiptap .tiptap-mathematics-render[data-type="block-math"],
+.publication-document .tiptap .tiptap-mathematics-render[data-type="block-math"] {
+  display: block;
+  text-align: center;
+}
+
+.material-editor-hint {
+  margin: 0;
+  padding: 0 18px 16px;
+  color: #657587;
+  font-size: 0.85rem;
+}
+
+.material-editor-resource {
+  margin-top: 20px;
+}
+
+.material-attachment-list {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.material-attachment-list li {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px 14px;
+  padding: 10px 12px;
+  border: 1px solid #e3eaf0;
+  border-radius: 9px;
+  background: #fff;
+}
+
+.material-attachment-list li.is-pending {
+  border-style: dashed;
+  background: #f8fafc;
+}
+
+.material-attachment-list li > a,
+.material-attachment-list li > span:first-child {
+  display: inline-flex;
+  min-width: 0;
+  align-items: center;
+  gap: 7px;
+  overflow-wrap: anywhere;
+}
+
+.material-attachment-list li > span:not(:first-child) {
+  margin-left: auto;
+  color: #657587;
+  font-size: 0.85rem;
+}
+
+.material-attachment-list li .btn {
+  flex: 0 0 auto;
+}
+
+.material-math-field {
+  display: block;
+  width: 100%;
+  min-height: 56px;
+  padding: 10px 12px;
+  border: 1px solid #cbd5df;
+  border-radius: 9px;
+  background: #fff;
+  font-size: 1.5rem;
+}
+
+.material-math-preview {
+  min-height: 90px;
+  padding: 14px;
+  border: 1px solid #e3eaf0;
+  border-radius: 10px;
+  background: #f8fafc;
+  overflow-x: auto;
+}
+
+.material-math-preview > span {
+  display: block;
+  margin-bottom: 12px;
+  color: #657587;
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
+.material-math-preview .math-content {
+  text-align: center;
+}
+
+.ML__keyboard {
+  --keyboard-zindex: 1060;
+}
+
+.material-math-dialog.keyboard-open.modal-dialog-centered {
+  align-items: flex-start;
+  min-height: 0;
+  margin-top: 1rem;
+  margin-bottom: calc(var(--math-keyboard-height, 260px) + 1rem);
+}
+
+.material-math-dialog.keyboard-open .modal-content {
+  max-height: calc(100dvh - var(--math-keyboard-height, 260px) - 2rem);
+}
+
+.material-math-dialog.keyboard-open .modal-body {
+  min-height: 0;
+  overflow-y: auto;
+}
+
+.publication-document {
+  min-width: 0;
+}
+
+.student-post-detail-content .publication-document .tiptap {
+  color: #34475b;
+  line-height: 1.8;
+  overflow-wrap: anywhere;
+}
+
+.student-section-post-content .publication-document .tiptap {
+  max-height: 240px;
+  overflow: auto;
+}
+
+@media (max-width: 700px) {
+  .student-post-detail {
+    padding: 24px 20px;
+    border-radius: 16px;
+  }
+
+  .student-post-detail-context {
+    margin-bottom: 24px;
+  }
+
+  .student-post-detail-description,
+  .student-post-detail-content,
+  .student-post-attachments {
+    margin-top: 22px;
+  }
+
+  .material-editor-heading,
+  .material-editor-heading-actions {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .material-editor-heading-actions .btn {
+    width: 100%;
+  }
+
+  .material-editor-content .tiptap {
+    min-height: 340px;
+  }
+
+  .material-toolbar-group {
+    padding-right: 0;
+    border-right: 0;
+  }
+}
+
+[data-bs-theme="dark"] .material-editor-metadata,
+[data-theme="dark"] .material-editor-metadata,
+[data-bs-theme="dark"] .material-editor-shell,
+[data-theme="dark"] .material-editor-shell {
+  border-color: #3b4a5a;
+  background: #17212b;
+  color: #e2e8f0;
+}
+
+[data-bs-theme="dark"] .material-editor-toolbar,
+[data-theme="dark"] .material-editor-toolbar,
+[data-bs-theme="dark"] .material-math-preview,
+[data-theme="dark"] .material-math-preview {
+  border-color: #3b4a5a;
+  background: #202c38;
+  color: #e2e8f0;
+}
+
+[data-bs-theme="dark"] .material-editor-content .tiptap,
+[data-bs-theme="dark"] .publication-document .tiptap,
+[data-theme="dark"] .material-editor-content .tiptap,
+[data-theme="dark"] .publication-document .tiptap {
+  color: #e2e8f0;
+}
+
+[data-bs-theme="dark"] .material-editor-content .tiptap h2,
+[data-bs-theme="dark"] .material-editor-content .tiptap h3,
+[data-bs-theme="dark"] .publication-document .tiptap h2,
+[data-bs-theme="dark"] .publication-document .tiptap h3,
+[data-theme="dark"] .material-editor-content .tiptap h2,
+[data-theme="dark"] .material-editor-content .tiptap h3,
+[data-theme="dark"] .publication-document .tiptap h2,
+[data-theme="dark"] .publication-document .tiptap h3 {
+  color: #f1f5f9;
+}
+
+[data-bs-theme="dark"] .material-math-field,
+[data-theme="dark"] .material-math-field {
+  border-color: #3b4a5a;
+  background: #17212b;
+  color: #e2e8f0;
 }

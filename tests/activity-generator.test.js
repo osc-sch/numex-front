@@ -3,6 +3,7 @@ import test from 'node:test'
 import {
   DEFAULT_ACTIVITY_GENERATION_PROMPT,
   getGeneratedActivities,
+  sanitizeTextField,
   toActivityDraft,
 } from '../src/utils/activityGenerator.js'
 import {
@@ -50,6 +51,35 @@ test('generated activities become editor drafts with fresh client IDs and the co
   assert.equal(draft.ejercicios[0].correctOptionId, 'new-1')
   assert.equal(draft.ejercicios[0].opciones[1].clientId, 'new-1')
   assert.equal(draft.ejercicios[0]._id, undefined)
+})
+
+test('sanitizes internal identifiers from generated text fields', () => {
+  assert.equal(sanitizeTextField('Pista para responder: clientId=abc12345'), 'Pista para responder:')
+  assert.equal(sanitizeTextField('Revisá la idea option-987654'), 'Revisá la idea')
+  assert.equal(sanitizeTextField('Identificador interno: new-1234'), 'Identificador interno:')
+  assert.equal(sanitizeTextField('Pista con optionId=abc_123'), 'Pista con')
+  assert.equal(sanitizeTextField(String.raw`# Título
+
+- Fórmula: $\frac{a}{b}$`), String.raw`# Título
+
+- Fórmula: $\frac{a}{b}$`)
+
+  const draft = toActivityDraft({
+    titulo: 'Fracciones',
+    descripcion: 'Repaso',
+    ejercicios: [{
+      enunciado: '¿Qué es 1/2?',
+      opciones: [
+        { texto: 'La mitad', pista: 'Pista: clientId=abc12345', explicacionError: 'new-9999' },
+        { texto: 'La tercera', pista: 'Mirá el enunciado', explicacionError: 'OK' },
+      ],
+      indiceCorrecta: 0,
+    }],
+  }, () => 'generated-id')
+
+  assert.equal(draft.ejercicios[0].opciones[0].pista, 'Pista:')
+  assert.equal(draft.ejercicios[0].opciones[0].explicacionError, '')
+  assert.equal(draft.ejercicios[0].opciones[1].pista, 'Mirá el enunciado')
 })
 
 test('files and prompt are posted as named multipart fields without a manual content type', async context => {

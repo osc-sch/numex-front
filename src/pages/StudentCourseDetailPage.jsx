@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Alert, Button, Spinner } from 'react-bootstrap'
 import { Link, useParams } from 'react-router-dom'
 import DashboardLayout from '../components/DashboardLayout'
+import MathContent from '../components/MathContent'
 import { getActivities } from '../services/activities'
 import { getCourseSections, getEnrolledCourse, getSectionPosts } from '../services/courses'
 import { getStudentActivityStatus } from '../utils/studentActivityStatus'
@@ -24,7 +25,7 @@ const activityStatuses = {
   },
 }
 
-function SectionContents({ courseId, sectionId, description }) {
+function SectionContents({ courseId, sectionId }) {
   const [posts, setPosts] = useState([])
   const [activities, setActivities] = useState([])
   const [isLoading, setIsLoading] = useState(true)
@@ -76,7 +77,6 @@ function SectionContents({ courseId, sectionId, description }) {
   if (contents.length === 0) {
     return (
       <div className="student-section-content-panel">
-        {description && <p className="student-course-section-description">{description}</p>}
         <p className="student-section-no-posts">Todavía no hay contenidos en esta sección.</p>
       </div>
     )
@@ -84,7 +84,6 @@ function SectionContents({ courseId, sectionId, description }) {
 
   return (
     <div className="student-section-content-panel">
-      {description && <p className="student-course-section-description">{description}</p>}
       <div className="student-section-posts" role="group" aria-label="Contenidos de la sección">
         {contents.map(({ item, type }) => {
           const isActivity = type === 'actividad'
@@ -107,7 +106,9 @@ function SectionContents({ courseId, sectionId, description }) {
                 <i className={`bi ${isActivity ? 'bi-clipboard-check' : 'bi-file-earmark-text'}`} />
               </span>
               <span className="student-section-post-card-type">{isActivity ? 'Actividad' : 'Material'}</span>
-              <span className="student-section-post-card-title">{item.titulo}</span>
+              <span className="student-section-post-card-title">
+                <MathContent content={item.titulo} inline />
+              </span>
               {isActivity && (
                 <>
                   <span className={`student-activity-status is-${status}`}>
@@ -193,27 +194,27 @@ function StudentCourseDetail({ id }) {
 
         {!isLoading && !loadError && course && (
           <>
-            <header className="teacher-section-heading student-course-detail-heading">
-              <div>
+            <section className="student-course-overview" aria-labelledby="student-course-detail-title">
+              <div className="student-course-overview-header">
                 <p className="teacher-eyebrow">Curso</p>
-                <h1 id="student-course-detail-title">{course.curso}</h1>
-                <span className="teacher-course-subject">{course.materia}</span>
+                <h1 id="student-course-detail-title"><MathContent content={course.curso} inline /></h1>
+                {course.materia && <span className="teacher-course-subject">{course.materia}</span>}
               </div>
-            </header>
 
-            <section className="student-course-detail-card" aria-labelledby="student-course-description-title">
-              <div className="student-course-detail-icon" aria-hidden="true">
-                <i className="bi bi-journal-text" />
+              <div className="student-course-overview-body">
+                <div className="student-course-detail-icon" aria-hidden="true">
+                  <i className="bi bi-journal-text" />
+                </div>
+                <div>
+                  <h2>Descripción del curso</h2>
+                  <MathContent content={course.descripcion?.trim() || 'Este curso todavía no tiene una descripción.'} />
+                </div>
               </div>
-              <div>
-                <h2 id="student-course-description-title">Descripción del curso</h2>
-                <p>{course.descripcion?.trim() || 'Este curso todavía no tiene una descripción.'}</p>
-              </div>
-            </section>
 
-            <section className="student-course-teacher" aria-labelledby="student-course-teacher-title">
-              <h2 id="student-course-teacher-title">Docente</h2>
-              <p>{teacherName || 'Docente del curso'}</p>
+              <div className="student-course-overview-teacher" aria-labelledby="student-course-teacher-title">
+                <h2 id="student-course-teacher-title">Docente</h2>
+                <p>{teacherName || 'Docente del curso'}</p>
+              </div>
             </section>
 
             <section className="student-course-sections" aria-labelledby="student-course-sections-title">
@@ -259,7 +260,6 @@ function StudentCourseDetail({ id }) {
                             <SectionContents
                               courseId={id}
                               sectionId={section._id}
-                              description={section.descripcion}
                             />
                           )}
                         </div>

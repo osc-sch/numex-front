@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Alert, Button, Modal, Spinner } from 'react-bootstrap'
 import { Link, useLocation, useParams } from 'react-router-dom'
 import DashboardLayout from '../components/DashboardLayout'
+import MathContent from '../components/MathContent'
 import { deleteActivity, getActivities } from '../services/activities'
 import { getCourse, getCourseSections } from '../services/courses'
 
@@ -130,12 +131,12 @@ function SectionActivities({ courseId, sectionId }) {
                     </div>
                     <div className="teacher-activity-card-main">
                       <div className="teacher-activity-card-heading">
-                        <h2>{activity.titulo}</h2>
+                        <h2><MathContent content={activity.titulo} inline /></h2>
                         <span className={`activity-status-badge ${activity.estado === 'publicado' ? 'is-published' : ''}`}>
                           {activity.estado === 'publicado' ? 'Publicada' : 'Borrador'}
                         </span>
                       </div>
-                      <p>{activity.descripcion || 'Sin descripción.'}</p>
+                      <MathContent content={activity.descripcion || 'Sin descripción.'} />
                       <span className="teacher-activity-question-count">
                         {activity.ejercicios?.length ?? 0} {(activity.ejercicios?.length ?? 0) === 1 ? 'pregunta' : 'preguntas'}
                       </span>

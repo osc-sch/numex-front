@@ -58,11 +58,12 @@ export async function getSession(options) {
     const profileIds = isTeacher
       ? [data.user?.id_profile_docente, data.user?.id_profile].filter(id => id != null)
       : [data.user?.id_profile]
+    const hasDiagnosticState = Object.hasOwn(data.profile ?? {}, 'test_diagnostic_completed')
     if (!isValidId(data.user?.id) ||
         !Number.isInteger(data.user.id_rol) || data.user.id_rol <= 0 ||
         !isValidId(data.profile?.id) || profileIds.length === 0 ||
         profileIds.some(id => id !== data.profile.id) ||
-        (!isTeacher && typeof data.profile.test_diagnostic_completed !== 'boolean')) {
+        (!isTeacher && hasDiagnosticState && typeof data.profile.test_diagnostic_completed !== 'boolean')) {
       throw new AuthError('No se pudo recuperar tu perfil.', 500)
     }
     return data

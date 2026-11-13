@@ -5,7 +5,7 @@ import ActivityGeneratorModal from '../components/ActivityGeneratorModal'
 import DashboardLayout from '../components/DashboardLayout'
 import { createActivity, getActivity, updateActivity as updateActivityRequest } from '../services/activities'
 import { getCourse, getCourseSections } from '../services/courses'
-import { toActivityDraft } from '../utils/activityGenerator'
+import { sanitizeTextField, toActivityDraft } from '../utils/activityGenerator'
 
 let temporaryIdSequence = 0
 const temporaryId = () => `new-${Date.now()}-${temporaryIdSequence++}`
@@ -13,21 +13,21 @@ const emptyActivity = () => ({ titulo: '', descripcion: '', estado: 'borrador', 
 
 function activityToDraft(activity) {
   return {
-    titulo: activity.titulo ?? '',
-    descripcion: activity.descripcion ?? '',
+    titulo: sanitizeTextField(activity.titulo),
+    descripcion: sanitizeTextField(activity.descripcion),
     estado: activity.estado ?? 'borrador',
     ejercicios: (activity.ejercicios ?? []).map(exercise => ({
       clientId: temporaryId(),
       _id: exercise._id,
       tipo: exercise.tipo ?? 'opcion_unica',
-      enunciado: exercise.enunciado ?? '',
-      explicacionGeneral: exercise.explicacionGeneral ?? '',
+      enunciado: sanitizeTextField(exercise.enunciado),
+      explicacionGeneral: sanitizeTextField(exercise.explicacionGeneral),
       opciones: (exercise.opciones ?? []).map(option => ({
         clientId: temporaryId(),
         _id: option._id,
-        texto: option.texto ?? '',
-        pista: option.pista ?? '',
-        explicacionError: option.explicacionError ?? '',
+        texto: sanitizeTextField(option.texto),
+        pista: sanitizeTextField(option.pista),
+        explicacionError: sanitizeTextField(option.explicacionError),
       })),
       correctOptionId: exercise.opciones?.find(option => option._id === exercise.respuestaCorrecta)?._id ?? null,
     })),
@@ -53,13 +53,13 @@ function buildExercises(exercises) {
   return exercises.map(exercise => ({
     ...(exercise._id ? { _id: exercise._id } : {}),
     tipo: exercise.tipo,
-    enunciado: exercise.enunciado.trim(),
-    explicacionGeneral: exercise.explicacionGeneral.trim(),
+    enunciado: sanitizeTextField(exercise.enunciado),
+    explicacionGeneral: sanitizeTextField(exercise.explicacionGeneral),
     opciones: exercise.opciones.map(option => ({
       ...(option._id ? { _id: option._id } : {}),
-      texto: option.texto.trim(),
-      pista: option.pista.trim(),
-      explicacionError: option.explicacionError.trim(),
+      texto: sanitizeTextField(option.texto),
+      pista: sanitizeTextField(option.pista),
+      explicacionError: sanitizeTextField(option.explicacionError),
     })),
     indiceCorrecta: exercise.opciones.findIndex(option => option.clientId === exercise.correctOptionId),
   }))
@@ -513,8 +513,8 @@ function ActivityEditor({ courseId, sectionId, activityId }) {
     }
 
     const payload = {
-      titulo: activity.titulo.trim(),
-      descripcion: activity.descripcion.trim(),
+      titulo: sanitizeTextField(activity.titulo),
+      descripcion: sanitizeTextField(activity.descripcion),
       estado: state,
       ...(exercisesAreValid ? { ejercicios: buildExercises(activity.ejercicios) } : {}),
     }

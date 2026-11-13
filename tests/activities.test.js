@@ -72,6 +72,37 @@ test('activity creation sends the supplied activity payload', async context => {
   assert.deepEqual(JSON.parse(options.body), payload)
 })
 
+test('activity LaTeX strings survive JSON submission and retrieval unchanged', async context => {
+  const formula = String.raw`$\int_0^1 x^2\,dx = \frac{1}{3}$`
+  const payload = {
+    titulo: 'Integrales',
+    descripcion: String.raw`Calculá $$\int_0^1 x\,dx$$`,
+    estado: 'publicado',
+    ejercicios: [{
+      tipo: 'opcion_unica',
+      enunciado: String.raw`¿Cuál es el valor de $\sqrt{9}$?`,
+      opciones: [
+        { texto: '2', pista: String.raw`Revisá $\sqrt{x}$.`, explicacionError: '' },
+        { texto: '3', pista: '', explicacionError: formula },
+      ],
+      indiceCorrecta: 1,
+    }],
+  }
+  const persistedActivity = { ...activity, ...payload }
+  const fetchMock = context.mock.method(globalThis, 'fetch', async (_url, options) => {
+    if (options.method === 'POST') return Response.json({ actividad: persistedActivity }, { status: 201 })
+    return Response.json({ actividad: persistedActivity })
+  })
+
+  const saved = await createActivity(courseId, sectionId, payload)
+  assert.deepEqual(JSON.parse(fetchMock.mock.calls[0].arguments[1].body), payload)
+  assert.equal(saved.ejercicios[0].opciones[1].explicacionError, formula)
+
+  const loaded = await getActivity(courseId, sectionId, activityId)
+  assert.equal(loaded.ejercicios[0].enunciado, payload.ejercicios[0].enunciado)
+  assert.equal(loaded.descripcion, payload.descripcion)
+})
+
 test('activity updates preserve existing exercise and option IDs', async context => {
   const payload = {
     estado: 'borrador',

@@ -1,5 +1,5 @@
 import './App.css'
-import { useState } from 'react'
+import { lazy, Suspense, useState } from 'react'
 import { Navigate, Route, Routes, useLocation } from 'react-router-dom'
 import { useAuth } from './auth/authContext'
 import { PublicAuth, RequireAuth } from './auth/AuthRoutes'
@@ -25,6 +25,8 @@ import StudentActivityPage from './pages/StudentActivityPage'
 import TeacherActivityTrackingPage from './pages/TeacherActivityTrackingPage'
 import { teacherSections } from './data/teacherWorkspace'
 import { loadLatestTestResult, saveLatestTestResult } from './utils/testResults'
+
+const TeacherMaterialEditorPage = lazy(() => import('./pages/TeacherMaterialEditorPage'))
 
 function App() {
   const { user } = useAuth()
@@ -54,6 +56,8 @@ function TeacherApp() {
       <Route path="/teacher/courses" element={<TeacherCoursesPage />} />
       <Route path="/teacher/courses/:id" element={<TeacherCourseSectionsPage />} />
       <Route path="/teacher/courses/:courseId/sections/:sectionId/posts" element={<TeacherSectionPostsPage />} />
+      <Route path="/teacher/courses/:courseId/sections/:sectionId/posts/new" element={<Suspense fallback={<p role="status">Cargando editor…</p>}><TeacherMaterialEditorPage /></Suspense>} />
+      <Route path="/teacher/courses/:courseId/sections/:sectionId/posts/:postId/edit" element={<Suspense fallback={<p role="status">Cargando editor…</p>}><TeacherMaterialEditorPage /></Suspense>} />
       <Route path="/teacher/courses/:courseId/sections/:sectionId/activities" element={<TeacherSectionActivitiesPage />} />
       <Route path="/teacher/courses/:courseId/sections/:sectionId/activities/new" element={<TeacherActivityEditorPage />} />
       <Route path="/teacher/courses/:courseId/sections/:sectionId/activities/:activityId/edit" element={<TeacherActivityEditorPage />} />

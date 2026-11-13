@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { Alert, Button, Form, Spinner } from 'react-bootstrap'
+import { Alert, Button, Form, Modal, Spinner } from 'react-bootstrap'
 import { Link } from 'react-router-dom'
 import DashboardLayout from '../components/DashboardLayout'
 import { getEnrolledCourses, joinCourse } from '../services/courses'
@@ -12,6 +12,7 @@ function StudentCoursesPage() {
   const [formError, setFormError] = useState('')
   const [success, setSuccess] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [showJoinModal, setShowJoinModal] = useState(false)
   const submitting = useRef(false)
 
   useEffect(() => {
@@ -40,12 +41,24 @@ function StudentCoursesPage() {
       setCourses(current => [course, ...current.filter(item => item._id !== course._id)])
       setCodigoAcceso('')
       setSuccess(`Te uniste a “${course.curso}” correctamente.`)
+      setShowJoinModal(false)
     } catch (error) {
       setFormError(error.message || 'No se pudo ingresar al curso. Intentá nuevamente.')
     } finally {
       submitting.current = false
       setIsSubmitting(false)
     }
+  }
+
+  const openJoinModal = () => {
+    setFormError('')
+    setShowJoinModal(true)
+  }
+
+  const closeJoinModal = () => {
+    if (isSubmitting) return
+    setFormError('')
+    setShowJoinModal(false)
   }
 
   const reloadCourses = async () => {
@@ -69,51 +82,15 @@ function StudentCoursesPage() {
             <h1 id="student-courses-title">Mis cursos</h1>
             <p>Ingresá el código que te compartió tu docente para unirte a su clase.</p>
           </div>
+          <Button onClick={openJoinModal}>
+            <i className="bi bi-key-fill me-2" aria-hidden="true" />
+            Unirme a un curso
+          </Button>
         </header>
 
-        <section className="student-course-join" aria-labelledby="student-course-join-title">
-          <div className="student-course-join-icon" aria-hidden="true">
-            <i className="bi bi-key-fill" />
-          </div>
-          <div className="student-course-join-content">
-            <h2 id="student-course-join-title">Unirme a un curso</h2>
-            <p>Ingresá el código que te compartió tu docente. No distingue entre mayúsculas y minúsculas.</p>
-            <Form onSubmit={handleJoin}>
-              <Form.Group controlId="courseAccessCode">
-                <Form.Label>Código de acceso</Form.Label>
-                <div className="student-course-join-controls">
-                  <Form.Control
-                    autoComplete="off"
-                    autoCapitalize="characters"
-                    maxLength={12}
-                    minLength={10}
-                    name="codigo_acceso"
-                    onChange={event => {
-                      setCodigoAcceso(event.target.value.replace(/\s/g, '').toUpperCase())
-                      setFormError('')
-                      setSuccess('')
-                    }}
-                    pattern="[A-Fa-f0-9]{10,12}"
-                    placeholder="Ejemplo: ABCDEF2345"
-                    required
-                    value={codigoAcceso}
-                    aria-describedby="course-access-code-help"
-                  />
-                  <Button type="submit" disabled={isSubmitting}>
-                    {isSubmitting
-                      ? <><Spinner size="sm" animation="border" aria-hidden="true" /> Uniéndome…</>
-                      : <><i className="bi bi-box-arrow-in-right" aria-hidden="true" /> Unirme</>}
-                  </Button>
-                </div>
-                <Form.Text id="course-access-code-help">Pedile el código a tu docente.</Form.Text>
-              </Form.Group>
-            </Form>
-            {formError && <Alert variant="danger" className="mt-3 mb-0" role="alert">{formError}</Alert>}
-            {success && <Alert variant="success" className="mt-3 mb-0" role="status">{success}</Alert>}
-          </div>
-        </section>
+        {success && <Alert variant="success" role="status">{success}</Alert>}
 
-        <section aria-labelledby="student-enrolled-courses-title">
+        <section className="student-enrolled-courses" aria-labelledby="student-enrolled-courses-title">
           <div className="student-enrolled-heading">
             <h2 id="student-enrolled-courses-title">Cursos en los que participás</h2>
             {!isLoading && !loadError && <span>{courses.length}</span>}
@@ -135,7 +112,11 @@ function StudentCoursesPage() {
                 <span /><i className="bi bi-collection" /><span />
               </div>
               <h2>Todavía no estás en ningún curso</h2>
-              <p>Cuando tengas un código de acceso, ingresalo arriba para unirte a la clase.</p>
+              <p>Cuando tengas un código de acceso, usá el botón «Unirme a un curso» para ingresar a la clase.</p>
+              <Button className="mt-2" onClick={openJoinModal}>
+                <i className="bi bi-key-fill me-2" aria-hidden="true" />
+                Unirme a un curso
+              </Button>
             </div>
           )}
           {courses.length > 0 && (
@@ -163,6 +144,61 @@ function StudentCoursesPage() {
           )}
         </section>
       </section>
+
+      <Modal
+        show={showJoinModal}
+        onHide={closeJoinModal}
+        centered
+        className="dashboard-modal student-course-join-modal"
+        backdrop={isSubmitting ? 'static' : true}
+        keyboard={!isSubmitting}
+      >
+        <Modal.Header closeButton={!isSubmitting}>
+          <Modal.Title>Unirme a un curso</Modal.Title>
+        </Modal.Header>
+        <Form onSubmit={handleJoin}>
+          <Modal.Body>
+            <p className="student-course-join-intro">
+              Ingresá el código que te compartió tu docente. No distingue entre mayúsculas y minúsculas.
+            </p>
+            {formError && <Alert variant="danger" role="alert">{formError}</Alert>}
+            <fieldset disabled={isSubmitting} className="border-0 p-0 m-0">
+              <Form.Group controlId="courseAccessCode">
+                <Form.Label>Código de acceso</Form.Label>
+                <Form.Control
+                  autoFocus
+                  autoComplete="off"
+                  autoCapitalize="characters"
+                  maxLength={12}
+                  minLength={10}
+                  name="codigo_acceso"
+                  onChange={event => {
+                    setCodigoAcceso(event.target.value.replace(/\s/g, '').toUpperCase())
+                    setFormError('')
+                    setSuccess('')
+                  }}
+                  pattern="[A-Fa-f0-9]{10,12}"
+                  placeholder="Ejemplo: ABCDEF2345"
+                  required
+                  value={codigoAcceso}
+                  aria-describedby="course-access-code-help"
+                />
+                <Form.Text id="course-access-code-help">Pedile el código a tu docente.</Form.Text>
+              </Form.Group>
+            </fieldset>
+          </Modal.Body>
+          <Modal.Footer>
+            <Button variant="outline-secondary" onClick={closeJoinModal} disabled={isSubmitting}>
+              Cancelar
+            </Button>
+            <Button type="submit" disabled={isSubmitting}>
+              {isSubmitting
+                ? <><Spinner size="sm" animation="border" aria-hidden="true" /> Uniéndome…</>
+                : <><i className="bi bi-box-arrow-in-right me-1" aria-hidden="true" /> Unirme</>}
+            </Button>
+          </Modal.Footer>
+        </Form>
+      </Modal>
     </DashboardLayout>
   )
 }
